@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Du bist Bundespräsident</title>
+<style>
+  :root {
+    --dark: #1C1F26; --navy: #2B3447; --gold: #B8902B; --red: #8C2733;
+    --green: #2F7A55; --card: #EEF0F4; --text: #2D2F36; --muted: #8E939D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--dark); color: #fff;
+    font-family: Calibri, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    display: flex; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { width: 100%; max-width: 560px; padding: 22px 18px 32px; display: flex; flex-direction: column; min-height: 100%; }
+  h1, h2, .serif { font-family: Cambria, Georgia, "Times New Roman", serif; }
+  h1 { font-size: 34px; line-height: 1.1; margin: 8px 0 10px; }
+  h2 { font-size: 23px; line-height: 1.25; margin: 6px 0 14px; }
+  .kicker { color: var(--gold); letter-spacing: .18em; text-transform: uppercase; font-size: 12px; font-weight: 700; }
+  p { line-height: 1.45; margin: 0 0 12px; color: #D9DCE2; font-size: 16px; }
+  .gold { color: var(--gold); }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 14px; color: var(--muted); }
+  .bar { height: 6px; background: #343A48; border-radius: 3px; overflow: hidden; margin-bottom: 18px; }
+  .bar > div { height: 100%; background: var(--gold); width: 0; transition: width .35s; }
+  .desk { background: var(--navy); border-radius: 14px; padding: 18px 18px 16px; margin-bottom: 16px; }
+  .desk .tag { display: inline-block; background: rgba(184,144,43,.18); color: var(--gold); font-weight: 700; font-size: 12px; padding: 3px 9px; border-radius: 6px; margin-bottom: 10px; }
+  .desk p { color: #fff; font-size: 17px; margin: 0; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  button {
+    font: inherit; font-size: 16px; text-align: left; cursor: pointer;
+    background: var(--card); color: var(--text); border: 2px solid transparent;
+    border-radius: 12px; padding: 14px 16px; line-height: 1.3;
+  }
+  button:active { transform: scale(.99); }
+  button.main { width: 100%; background: var(--gold); color: var(--dark); font-weight: 700; text-align: center; font-size: 18px; padding: 15px; }
+  button.right { border-color: var(--green); background: #E3F1EA; }
+  button.wrong { border-color: var(--red); background: #F5E3E6; }
+  button:disabled { cursor: default; }
+  .opts.done button:not(.right):not(.wrong) { opacity: .55; }
+  .fb { margin-top: 14px; border-radius: 12px; padding: 14px 16px; background: #262B37; border-left: 0; }
+  .fb strong { display: block; font-size: 17px; margin-bottom: 6px; }
+  .fb .ok { color: #7BD3A6; } .fb .no { color: #F0A3AF; }
+  .fb p { font-size: 15px; margin: 0 0 8px; }
+  .fb .src { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .spacer { flex: 1; min-height: 16px; }
+  input {
+    font: inherit; font-size: 17px; width: 100%; padding: 13px 14px; border-radius: 10px;
+    border: 2px solid #3A4254; background: #262B37; color: #fff; margin: 4px 0 14px;
+  }
+  input:focus { outline: none; border-color: var(--gold); }
+  .big { font-family: Cambria, Georgia, serif; font-size: 64px; font-weight: 700; color: var(--gold); line-height: 1; margin: 6px 0 4px; }
+  .type { background: var(--navy); border-radius: 14px; padding: 18px; margin: 16px 0; }
+  .type h2 { margin: 4px 0 8px; }
+  .list { margin: 8px 0 0; padding: 0; list-style: none; }
+  .list li { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #323848; font-size: 14.5px; color: #D9DCE2; line-height: 1.35; }
+  .list li span { flex: 0 0 22px; font-weight: 700; }
+  .list .r { color: #7BD3A6; } .list .w { color: #F0A3AF; }
+  .foot { font-size: 12px; color: var(--muted); text-align: center; margin-top: 18px; line-height: 1.4; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+// ------------------------------------------------------------
+// Fragen: jede beruht auf einem echten Fall oder einer Regel im
+// Grundgesetz. Quellen stehen jeweils dabei.
+// ------------------------------------------------------------
+const Q = [
+  {
+    tag: "Kanzlerwahl · Art. 63 GG",
+    text: "Nach einer Bundestagswahl hast du einen Kandidaten vorgeschlagen. Er erhält 310 Stimmen – nötig sind 316. Was passiert jetzt?",
+    opts: [
+      "Du ernennst ihn trotzdem, 310 Stimmen sind genug",
+      "Der Bundestag hat 14 Tage Zeit und kann selbst jemanden wählen",
+      "Du löst sofort den Bundestag auf",
+    ],
+    ok: 1,
+    why: "Im 1. Wahlgang braucht der Kandidat die Mehrheit aller Abgeordneten. Scheitert er, hat der Bundestag 14 Tage für weitere Wahlgänge. Genau das passierte am 6. Mai 2025: Friedrich Merz verfehlte im 1. Wahlgang die Mehrheit und wurde am selben Tag im 2. Wahlgang mit 325 Stimmen gewählt.",
+    src: "Deutscher Bundestag, Textarchiv 2025 (Kanzlerwahl); Art. 63 Abs. 3 GG",
+  },
+  {
+    tag: "Kanzlerwahl · Art. 63 GG",
+    text: "Der Bundestag wählt mit absoluter Mehrheit eine Kanzlerin. Du hältst sie persönlich für ungeeignet. Was tust du?",
+    opts: [
+      "Du ernennst sie – du musst",
+      "Du verweigerst die Ernennung",
+      "Du schlägst eine andere Person vor",
+    ],
+    ok: 0,
+    why: "Wer mit der Mehrheit der Mitglieder gewählt ist, „ist vom Bundespräsidenten zu ernennen“. Der Präsident hat hier kein Ermessen. Das ist eine bewusste Lehre aus Weimar, wo der Reichspräsident den Kanzler frei bestimmen konnte.",
+    src: "Art. 63 Abs. 2 GG; Art. 53 Weimarer Reichsverfassung",
+  },
+  {
+    tag: "Reserve · Art. 63 Abs. 4 GG",
+    text: "Auch nach 14 Tagen findet niemand eine absolute Mehrheit. Im letzten Wahlgang bekommt eine Kandidatin nur die meisten Stimmen (relative Mehrheit). Und jetzt?",
+    opts: [
+      "Sie ist automatisch Kanzlerin",
+      "Du entscheidest binnen 7 Tagen: ernennen oder Bundestag auflösen",
+      "Die Bundesversammlung muss entscheiden",
+    ],
+    ok: 1,
+    why: "Das ist die „Reservefunktion“ des Präsidenten: Nur hier entscheidet er wirklich frei – Minderheitskanzlerin ernennen oder Neuwahlen. Diesen Fall gab es seit 1949 noch nie.",
+    src: "Art. 63 Abs. 4 GG; bpb: Bundespräsident",
+  },
+  {
+    tag: "Auflösung · Art. 68 GG",
+    text: "Der Kanzler hat die Vertrauensfrage verloren und schlägt dir vor, den Bundestag aufzulösen. Was gilt?",
+    opts: [
+      "Du musst auflösen",
+      "Du darfst auflösen, musst aber nicht – du hast 21 Tage",
+      "Du darfst nicht auflösen, das macht der Bundestag selbst",
+    ],
+    ok: 1,
+    why: "Der Präsident „kann“ auflösen – es ist seine eigene Entscheidung. Das passierte zuletzt am 27.12.2024: Nach der gescheiterten Vertrauensfrage von Olaf Scholz löste Frank-Walter Steinmeier den Bundestag auf, Neuwahl am 23.02.2025. Ein Recht, sich selbst aufzulösen, hat der Bundestag nicht.",
+    src: "Art. 68 GG; Deutscher Bundestag, Textarchiv 2024 (Vertrauensfrage)",
+  },
+  {
+    tag: "Notrecht · Weimar vs. GG",
+    text: "Die Regierung hat keine Mehrheit mehr und bittet dich, wichtige Gesetze per Notverordnung ohne den Bundestag in Kraft zu setzen. Darfst du das?",
+    opts: [
+      "Ja, in einer Krise ist das erlaubt",
+      "Nein, ein Notverordnungsrecht gibt es nicht",
+      "Ja, wenn der Kanzler gegenzeichnet",
+    ],
+    ok: 1,
+    why: "Genau das war in Weimar das Problem: 1932 standen 60 Notverordnungen nur 5 Reichstagsgesetzen gegenüber. Das Grundgesetz kennt kein Notverordnungsrecht. Die einzige enge Ausnahme, der Gesetzgebungsnotstand (Art. 81), braucht den Bundesrat – und wurde nie angewandt.",
+    src: "Art. 48 WRV; Art. 81 GG; H. Schneider, VfZ 1953, S. 199",
+  },
+  {
+    tag: "Unterschrift · Art. 82 GG",
+    text: "Ein Gesetz ist korrekt beschlossen, aber extrem umstritten. Du findest es politisch falsch. Was tust du?",
+    opts: [
+      "Unterschreiben – politische Ablehnung ist kein Grund",
+      "Verweigern – du musst an die Bürger denken",
+      "Zurück an den Bundestag schicken",
+    ],
+    ok: 0,
+    why: "Der Präsident hat kein politisches Veto. Beispiel Heizungsgesetz 2023: heftig umstritten, beschlossen mit 399 zu 275 Stimmen – und ausgefertigt. Ein „Zurückschicken“ sieht das Grundgesetz nicht vor.",
+    src: "Art. 82 GG; beck-aktuell, 08.09.2023; BGBl. 2023 I Nr. 280",
+  },
+  {
+    tag: "Unterschrift · Art. 84 GG",
+    text: "Ein Gesetz überträgt den Gemeinden direkt neue Aufgaben. Seit einer Reform verbietet das Grundgesetz genau das. Was tust du?",
+    opts: [
+      "Unterschreiben – das Bundesverfassungsgericht kann es ja prüfen",
+      "Verweigern – das ist ein offensichtlicher Verstoß",
+      "Unterschreiben, aber eine Rede dagegen halten",
+    ],
+    ok: 1,
+    why: "So entschied Horst Köhler am 08.12.2006 beim Verbraucherinformationsgesetz. Der Bund darf Gemeinden keine Aufgaben direkt übertragen (Art. 84 Abs. 1 S. 7). Das Gesetz wurde neu beschlossen und galt erst 2008 – 16 Monate später als geplant.",
+    src: "Verbraucherzentrale Bundesverband: Historie des VIG; Bundestag, Datenhandbuch Kap. 10.7",
+  },
+  {
+    tag: "Unterschrift · Prüfungsrecht",
+    text: "2026: Ein Umweltverband legt ein Gutachten vor – das neue Heizungsgesetz hätte angeblich den Bundesrat gebraucht. Juristen sind sich uneinig. Was tat Steinmeier?",
+    opts: [
+      "Er verweigerte die Unterschrift",
+      "Er unterschrieb – er teilte die Zweifel nicht",
+      "Er ließ den Bundesrat neu abstimmen",
+    ],
+    ok: 1,
+    why: "Der Präsident stoppt nur offensichtliche Verfassungsverstöße. Steinmeier unterschrieb das Gebäudemodernisierungsgesetz am 23.07.2026. Ob ein Gesetz verfassungswidrig ist, entscheidet am Ende das Bundesverfassungsgericht.",
+    src: "LTO, 14.07.2026; pv magazine, 28.07.2026",
+  },
+  {
+    tag: "Vertretung · Art. 57 GG",
+    text: "Du bist im Osterurlaub. Ein Gesetz soll schnell in Kraft treten. Wer unterschreibt?",
+    opts: [
+      "Niemand – das Gesetz muss warten",
+      "Der Bundeskanzler",
+      "Der Präsident (bzw. die Präsidentin) des Bundesrates",
+    ],
+    ok: 2,
+    why: "Bei Verhinderung vertritt der Bundesratspräsident den Bundespräsidenten. So unterschrieb am 27.03.2024 Manuela Schwesig das Cannabisgesetz – nicht Steinmeier.",
+    src: "Art. 57 GG; LTO, 25.03.2024",
+  },
+  {
+    tag: "Neutralität · BVerfG 2014",
+    text: "In einer Rede vor Schülern nennst du Anhänger einer rechtsextremen Partei „Spinner“. Die Partei klagt. Wie entscheidet das Bundesverfassungsgericht?",
+    opts: [
+      "Unzulässig – der Präsident muss immer neutral sein",
+      "Zulässig – Grenze erst bei willkürlicher Parteinahme",
+      "Der Präsident muss zurücktreten",
+    ],
+    ok: 1,
+    why: "So geschah es 2013 mit Joachim Gauck und der NPD. Das BVerfG entschied 2014: Der Präsident bestimmt Themen und Ton selbst. Unzulässig wird es erst, wenn er seine Integrationsaufgabe offensichtlich vernachlässigt und willkürlich Partei ergreift.",
+    src: "BVerfG, 2 BvE 4/13, nach LTO 2014",
+  },
+];
+
+const TYPES = [
+  { min: 0, name: "Grüßaugust", text: "Du hast das Amt eher unterschätzt. Der Bundespräsident regiert zwar nicht – aber er prüft Gesetze und entscheidet in Krisen mit." },
+  { min: 5, name: "Staatsnotar", text: "Solide! Du kennst die Regeln des Amts. Bei den Sonderfällen – Reserve und Prüfungsrecht – geht noch mehr." },
+  { min: 8, name: "Hüter der Verfassung", text: "Stark! Du weißt, wann der Präsident handeln muss, wann er darf – und wann er sich zurückhalten muss." },
+];
+
+let name = "", i = 0, score = 0, log = [];
+const app = document.getElementById("app");
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function start() {
+  app.innerHTML = `
+    <div class="kicker">Politik · Ein Spiel zum Bundespräsidenten</div>
+    <h1>Du bist<br><span class="gold">Bundespräsident.</span></h1>
+    <p>Auf deinem Schreibtisch landen 10 echte Situationen. Entscheide wie ein Staatsoberhaupt – nach dem Grundgesetz, nicht nach Bauchgefühl.</p>
+    <p>Am Ende erfährst du, ob du eher <b>Grüßaugust</b>, <b>Staatsnotar</b> oder <b>Hüter der Verfassung</b> bist.</p>
+    <div class="spacer"></div>
+    <label for="nm" style="font-size:14px;color:var(--muted)">Dein Vorname (optional)</label>
+    <input id="nm" maxlength="24" autocomplete="off" placeholder="z. B. Lena">
+    <button class="main" id="go">Amt antreten</button>
+    <div class="foot">Dauer: ca. 4 Minuten · Alle Fälle sind echt und mit Quelle belegt</div>`;
+  document.getElementById("go").onclick = () => {
+    name = document.getElementById("nm").value.trim();
+    i = 0; score = 0; log = []; question();
+  };
+}
+
+function question() {
+  const q = Q[i];
+  app.innerHTML = `
+    <div class="top"><span>Fall ${i + 1} von ${Q.length}</span><span>Punkte: ${score}</span></div>
+    <div class="bar"><div style="width:${(i / Q.length) * 100}%"></div></div>
+    <div class="desk"><div class="tag">${q.tag}</div><p>${q.text}</p></div>
+    <div class="opts" id="opts">${q.opts.map((o, k) => `<button data-k="${k}">${o}</button>`).join("")}</div>
+    <div id="fb"></div>`;
+  document.querySelectorAll("#opts button").forEach(b => b.onclick = () => answer(+b.dataset.k));
+}
+
+function answer(k) {
+  const q = Q[i], right = k === q.ok;
+  if (right) score++;
+  log.push({ q: i, right });
+  const box = document.getElementById("opts");
+  box.classList.add("done");
+  box.querySelectorAll("button").forEach((b, n) => {
+    b.disabled = true;
+    if (n === q.ok) b.classList.add("right");
+    else if (n === k) b.classList.add("wrong");
+  });
+  const last = i === Q.length - 1;
+  document.getElementById("fb").innerHTML = `
+    <div class="fb">
+      <strong class="${right ? "ok" : "no"}">${right ? "Richtig entschieden!" : "Nicht ganz."}</strong>
+      <p>${q.why}</p>
+      <p class="src">Quelle: ${q.src}</p>
+    </div>
+    <div style="height:12px"></div>
+    <button class="main" id="next">${last ? "Ergebnis ansehen" : "Nächster Fall"}</button>`;
+  document.querySelector(".top span:last-child").textContent = "Punkte: " + score;
+  const nx = document.getElementById("next");
+  nx.onclick = () => { i++; last ? result() : question(); window.scrollTo(0, 0); };
+  nx.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+
+function result() {
+  const t = [...TYPES].reverse().find(t => score >= t.min);
+  app.innerHTML = `
+    <div class="kicker">Amtszeit beendet${name ? " · " + esc(name) : ""}</div>
+    <div class="big">${score}<span style="font-size:30px;color:#fff"> / ${Q.length}</span></div>
+    <div class="type">
+      <div class="kicker">Du bist</div>
+      <h2>${t.name}</h2>
+      <p style="margin:0">${t.text}</p>
+    </div>
+    <ul class="list">${log.map(l => `<li><span class="${l.right ? "r" : "w"}">${l.right ? "✓" : "✗"}</span>${Q[l.q].tag}</li>`).join("")}</ul>
+    <div class="spacer"></div>
+    <div style="height:16px"></div>
+    <button class="main" id="again">Noch einmal spielen</button>
+    <div class="foot">Zeig dein Ergebnis – wer schafft 10 von 10?<br>Erstellt für eine Präsentation im Politik-Leistungskurs, Jahrgang 12.</div>`;
+  document.getElementById("again").onclick = start;
+}
+
+start();
+</script>
+</body>
+</html>
