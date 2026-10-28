@@ -16,6 +16,7 @@
     --bronze: #c8875a;
     --text: #eef1f7;
     --muted: #9aa6bd;
+    --rot: #c63d3d;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; }
@@ -25,10 +26,11 @@
     font-family: "Nunito", system-ui, sans-serif;
     padding: clamp(16px, 3vw, 48px);
   }
-  .rahmen { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) clamp(180px, 20vw, 280px); gap: clamp(16px, 3vw, 48px); align-items: start; }
-  @media (max-width: 800px) { .rahmen { grid-template-columns: minmax(0, 1fr); } .seite { order: -1; } }
+  .rahmen { max-width: 1500px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) clamp(260px, 30vw, 460px); gap: clamp(16px, 3vw, 48px); align-items: start; }
+  @media (max-width: 800px) { .rahmen { grid-template-columns: minmax(0, 1fr); } .seite { order: -1; max-width: 360px; justify-self: center; width: 100%; } }
 
-  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: clamp(12px, 2vw, 24px); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: clamp(12px, 2vw, 24px); }
+  .rechts { display: flex; align-items: center; gap: 16px; }
   h1 { margin: 0; font-family: "Source Serif 4", Georgia, serif; font-size: clamp(28px, 4vw, 56px); color: var(--gold); line-height: 1.1; }
   .unter { color: var(--muted); font-size: clamp(14px, 1.4vw, 20px); }
   .live { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: clamp(13px, 1.2vw, 17px); color: #ff8a8a; letter-spacing: .1em; }
@@ -36,6 +38,32 @@
   .live.aus { color: var(--muted); }
   .live.aus::before { background: var(--muted); animation: none; }
   @keyframes blink { 50% { opacity: .25; } }
+
+  /* Menü mit drei Strichen */
+  .menue { position: relative; }
+  .menueknopf {
+    width: 44px; height: 44px; border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .06);
+    cursor: pointer; display: grid; place-content: center; gap: 5px; padding: 0;
+  }
+  .menueknopf span { display: block; width: 20px; height: 2px; background: var(--text); border-radius: 2px; }
+  .menueknopf:hover, .menueknopf[aria-expanded="true"] { background: rgba(255, 255, 255, .14); }
+  .menueknopf:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .menueliste {
+    position: absolute; right: 0; top: calc(100% + 8px); z-index: 30;
+    min-width: 240px; background: #fff; color: var(--navy);
+    border-radius: 12px; padding: 6px; box-shadow: 0 16px 40px rgba(0, 0, 0, .4);
+    display: none;
+  }
+  .menueliste.offen { display: block; }
+  .menueliste button, .menueliste a {
+    display: flex; width: 100%; align-items: center; gap: 10px;
+    font: inherit; font-weight: 700; font-size: 15px; color: inherit; text-decoration: none;
+    background: none; border: 0; border-radius: 8px; padding: 10px 12px; cursor: pointer; text-align: left;
+  }
+  .menueliste button:hover, .menueliste a:hover { background: #eef1f7; }
+  .menueliste .gefahr { color: var(--rot); }
+  .menueliste hr { border: 0; border-top: 1px solid #e3e6ee; margin: 4px 6px; }
 
   table { width: 100%; border-collapse: separate; border-spacing: 0 clamp(4px, .6vw, 8px); font-size: clamp(16px, 1.8vw, 28px); }
   th { text-align: left; color: var(--muted); font-size: .6em; letter-spacing: .1em; text-transform: uppercase; padding: 0 .8em; }
@@ -56,13 +84,46 @@
   .leer { color: var(--muted); font-size: clamp(16px, 1.8vw, 24px); padding: 2em 0; }
   .fuss { color: var(--muted); font-size: clamp(12px, 1.1vw, 15px); margin-top: 16px; }
 
-  .seite { background: #fff; color: var(--navy); border-radius: 16px; padding: clamp(14px, 1.6vw, 22px); text-align: center; }
+  /* QR-Code an der Seite, Klick für Vollbild */
+  .seite {
+    background: #fff; color: var(--navy); border-radius: 18px; padding: clamp(16px, 1.8vw, 26px);
+    text-align: center; border: 0; font: inherit; cursor: zoom-in; width: 100%;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .seite:hover { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(217, 180, 90, .6); }
+  .seite:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
   .seite img { width: 100%; height: auto; display: block; }
-  .seite b { display: block; font-size: clamp(16px, 1.6vw, 22px); margin-top: 8px; }
-  .seite span { font-size: clamp(12px, 1vw, 14px); color: #5b6478; word-break: break-all; }
-  .seite a { color: inherit; }
+  .seite b { display: block; font-size: clamp(18px, 2vw, 30px); margin-top: 8px; }
+  .seite span { display: block; font-size: clamp(12px, 1.1vw, 16px); color: #5b6478; word-break: break-all; }
+  .seite small { display: block; margin-top: 6px; color: #8a93a6; font-size: 12px; }
 
-  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; } }
+  .vollbild {
+    position: fixed; inset: 0; z-index: 50; background: #fff; color: var(--navy);
+    display: none; flex-direction: column; align-items: center; justify-content: center; gap: 2vh;
+    cursor: zoom-out; padding: 3vh;
+  }
+  .vollbild.offen { display: flex; }
+  .vollbild img { width: min(78vh, 90vw); height: auto; }
+  .vollbild b { font-size: clamp(28px, 5vh, 64px); }
+  .vollbild span { font-size: clamp(16px, 2.6vh, 30px); color: #5b6478; text-align: center; word-break: break-all; }
+
+  /* Dialog zum Leeren */
+  .dialoghintergrund { position: fixed; inset: 0; z-index: 60; background: rgba(10, 14, 26, .7); display: none; align-items: center; justify-content: center; padding: 16px; }
+  .dialoghintergrund.offen { display: flex; }
+  .dialog { background: #fff; color: var(--navy); border-radius: 14px; padding: 24px; width: min(440px, 100%); box-shadow: 0 20px 50px rgba(0, 0, 0, .5); }
+  .dialog h2 { margin: 0 0 8px; font-size: 22px; color: var(--rot); }
+  .dialog p { margin: 0 0 14px; color: #4b5468; line-height: 1.5; }
+  .dialog label { font-weight: 700; display: block; margin-bottom: 6px; }
+  .dialog input { width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border: 2px solid #cfd5e1; border-radius: 8px; }
+  .dialog input:focus { outline: none; border-color: var(--navy); }
+  .dialog .meldung { min-height: 1.4em; font-size: 14px; margin-top: 6px; color: var(--rot); }
+  .dialog .meldung.ok { color: #1f6a42; }
+  .dialog .knoepfe { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+  .dialog button { font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; background: #e7e9ef; color: var(--navy); }
+  .dialog button.gefahr { background: var(--rot); color: #fff; }
+  .dialog button:disabled { opacity: .6; cursor: wait; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
@@ -73,37 +134,82 @@
         <h1>Bestenliste</h1>
         <div class="unter">Be a President · alle abgeschlossenen Amtszeiten</div>
       </div>
-      <div class="live" id="live">LIVE</div>
+      <div class="rechts">
+        <div class="live" id="live">LIVE</div>
+        <div class="menue">
+          <button class="menueknopf" id="menueknopf" aria-label="Einstellungen" aria-expanded="false" aria-controls="menueliste"><span></span><span></span><span></span></button>
+          <div class="menueliste" id="menueliste">
+            <button id="qrVollbild">QR-Code im Vollbild</button>
+            <button id="seiteVollbild">Seite im Vollbild</button>
+            <a href="../" target="_blank" rel="noopener">Spiel öffnen ↗</a>
+            <hr>
+            <button class="gefahr" id="leerenOeffnen">Bestenliste leeren…</button>
+          </div>
+        </div>
+      </div>
     </header>
     <div id="liste"><p class="leer">Bestenliste wird geladen…</p></div>
     <div class="fuss" id="fuss"></div>
   </main>
-  <aside class="seite">
+  <button class="seite" id="qrKarte" aria-label="QR-Code im Vollbild zeigen">
     <img src="qr.svg" alt="QR-Code zum Spiel">
     <b>Jetzt mitspielen!</b>
-    <span><a href="../">kontaktnazura-art.github.io/bethebundespraesident</a></span>
-  </aside>
+    <span>kontaktnazura-art.github.io/bethebundespraesident</span>
+    <small>Klicken für Vollbild</small>
+  </button>
 </div>
 
-<script src="../config.js?v=4"></script>
+<div class="vollbild" id="vollbild" role="dialog" aria-label="QR-Code im Vollbild">
+  <img src="qr.svg" alt="QR-Code zum Spiel">
+  <b>Jetzt mitspielen!</b>
+  <span>kontaktnazura-art.github.io/bethebundespraesident</span>
+</div>
+
+<div class="dialoghintergrund" id="leerenDialog">
+  <form class="dialog" id="leerenFormular" role="dialog" aria-labelledby="leerenTitel">
+    <h2 id="leerenTitel">Bestenliste leeren</h2>
+    <p>Alle Einträge werden für alle Spieler gelöscht. Das lässt sich nicht rückgängig machen.</p>
+    <label for="passwort">Passwort</label>
+    <input id="passwort" type="password" autocomplete="current-password">
+    <div class="meldung" id="leerenMeldung" role="status"></div>
+    <div class="knoepfe">
+      <button type="button" id="leerenAbbrechen">Abbrechen</button>
+      <button type="submit" class="gefahr" id="leerenBestaetigen">Alles löschen</button>
+    </div>
+  </form>
+</div>
+
+<script src="../config.js?v=5"></script>
 <script>
   const ANZAHL = 15;
   const INTERVALL = 5000;
   const RUNDEN = 6;
   let bekannteIds = null;
 
+  const eingerichtet = typeof BESTENLISTE_ONLINE !== "undefined" && BESTENLISTE_ONLINE.url && BESTENLISTE_ONLINE.key;
+
   function esc(s) {
     return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   }
 
-  async function lade() {
+  function supabase(pfad, optionen = {}) {
     const { url, key } = BESTENLISTE_ONLINE;
-    const antwort = await fetch(`${url.replace(/\/$/, "")}/rest/v1/scores?select=id,name,punkte,richtige,zeit&order=punkte.desc,richtige.desc,zeit.asc&limit=${ANZAHL}`, {
+    return fetch(`${url.replace(/\/$/, "")}/rest/v1/${pfad}`, {
+      ...optionen,
       headers: {
         apikey: key,
-        Prefer: "count=exact",
-        ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {})
+        "Content-Type": "application/json",
+        ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {}),
+        ...(optionen.headers || {})
       }
+    });
+  }
+
+  // ---------- Bestenliste ----------
+
+  async function lade() {
+    const antwort = await supabase(`scores?select=id,name,punkte,richtige,zeit&order=punkte.desc,richtige.desc,zeit.asc&limit=${ANZAHL}`, {
+      headers: { Prefer: "count=exact" }
     });
     if (!antwort.ok) throw new Error(antwort.status);
     const gesamt = (antwort.headers.get("content-range") || "").split("/")[1];
@@ -140,7 +246,104 @@
     }
   }
 
-  if (typeof BESTENLISTE_ONLINE === "undefined" || !BESTENLISTE_ONLINE.url) {
+  // ---------- Menü ----------
+
+  const menueknopf = document.getElementById("menueknopf");
+  const menueliste = document.getElementById("menueliste");
+  function menue(offen) {
+    menueliste.classList.toggle("offen", offen);
+    menueknopf.setAttribute("aria-expanded", offen);
+  }
+  menueknopf.addEventListener("click", e => { e.stopPropagation(); menue(!menueliste.classList.contains("offen")); });
+  document.addEventListener("click", e => { if (!menueliste.contains(e.target)) menue(false); });
+
+  // ---------- Vollbild ----------
+
+  const vollbild = document.getElementById("vollbild");
+  function echtesVollbild() {
+    const el = document.documentElement;
+    if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  }
+  function zeigeQr() {
+    menue(false);
+    vollbild.classList.add("offen");
+    echtesVollbild();
+  }
+  function schliesseQr() {
+    vollbild.classList.remove("offen");
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  }
+  document.getElementById("qrKarte").addEventListener("click", zeigeQr);
+  document.getElementById("qrVollbild").addEventListener("click", zeigeQr);
+  vollbild.addEventListener("click", schliesseQr);
+  document.getElementById("seiteVollbild").addEventListener("click", () => { menue(false); echtesVollbild(); });
+  // Wer das Vollbild mit Esc verlässt, landet wieder bei der Bestenliste
+  document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) vollbild.classList.remove("offen"); });
+
+  // ---------- Bestenliste leeren ----------
+
+  const dialog = document.getElementById("leerenDialog");
+  const passwort = document.getElementById("passwort");
+  const meldung = document.getElementById("leerenMeldung");
+  const bestaetigen = document.getElementById("leerenBestaetigen");
+
+  function oeffneDialog() {
+    menue(false);
+    passwort.value = "";
+    meldung.textContent = "";
+    meldung.className = "meldung";
+    bestaetigen.disabled = false;
+    dialog.classList.add("offen");
+    passwort.focus();
+  }
+  function schliesseDialog() { dialog.classList.remove("offen"); }
+
+  document.getElementById("leerenOeffnen").addEventListener("click", oeffneDialog);
+  document.getElementById("leerenAbbrechen").addEventListener("click", schliesseDialog);
+  dialog.addEventListener("click", e => { if (e.target === dialog) schliesseDialog(); });
+  passwort.addEventListener("input", () => { meldung.textContent = ""; });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    schliesseDialog();
+    menue(false);
+    vollbild.classList.remove("offen");
+  });
+
+  document.getElementById("leerenFormular").addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!passwort.value) {
+      meldung.textContent = "Gib zuerst das Passwort ein.";
+      passwort.focus();
+      return;
+    }
+    bestaetigen.disabled = true;
+    meldung.className = "meldung";
+    meldung.textContent = "Wird gelöscht…";
+    try {
+      const antwort = await supabase("rpc/bestenliste_leeren", { method: "POST", body: JSON.stringify({ passwort: passwort.value }) });
+      if (antwort.ok) {
+        const anzahl = await antwort.json();
+        meldung.className = "meldung ok";
+        meldung.textContent = `Bestenliste geleert (${anzahl} Einträge gelöscht).`;
+        bekannteIds = null;
+        aktualisiere();
+        setTimeout(schliesseDialog, 1500);
+        return;
+      }
+      const fehler = await antwort.json().catch(() => ({}));
+      meldung.textContent = /Passwort/.test(fehler.message || "")
+        ? "Falsches Passwort."
+        : antwort.status === 404
+          ? "Die Löschfunktion ist in Supabase noch nicht eingerichtet (supabase_leeren.sql)."
+          : "Das hat nicht geklappt. Bitte noch einmal versuchen.";
+    } catch (err) {
+      meldung.textContent = "Keine Verbindung zur Bestenliste.";
+    }
+    bestaetigen.disabled = false;
+    passwort.select();
+  });
+
+  if (!eingerichtet) {
     document.getElementById("liste").innerHTML = `<p class="leer">Die gemeinsame Bestenliste ist noch nicht eingerichtet (config.js).</p>`;
   } else {
     aktualisiere();
