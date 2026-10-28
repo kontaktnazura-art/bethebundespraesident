@@ -19,7 +19,6 @@
     --green-dark: #1f6a42;
     --red: #c63d3d;
     --red-dark: #962a2a;
-    --blue: #4f7fc0;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -64,11 +63,16 @@
     color: var(--navy);
     letter-spacing: .04em;
     z-index: 5;
+    white-space: nowrap;
   }
-  .hud.left { left: 0; width: 19.5%; border-left: 0; border-bottom-right-radius: 1cqw; }
+  .hud.left { left: 0; min-width: 19.5%; max-width: 50%; border-left: 0; border-bottom-right-radius: 1cqw; }
   .hud.right { right: 0; width: 29%; border-right: 0; border-bottom-left-radius: 1cqw; justify-content: space-between; }
-  .hud .menu { width: 1.8cqw; height: 1.3cqw; border-top: .3cqw solid #8a93a6; border-bottom: .3cqw solid #8a93a6; position: relative; }
+  .hud .menu { flex: none; width: 1.8cqw; height: 1.3cqw; border-top: .3cqw solid #8a93a6; border-bottom: .3cqw solid #8a93a6; position: relative; }
   .hud .menu::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: .3cqw solid #8a93a6; transform: translateY(-50%); }
+  .hud .spieler { overflow: hidden; text-overflow: ellipsis; color: #8a6d1f; }
+  .hud .spieler:empty { display: none; }
+  .hud .trenner { color: #b6bccb; font-weight: 400; }
+  .hud .spieler:empty + .trenner { display: none; }
   .bar { flex: 1; height: 2cqw; background: #34405a; border-radius: 1cqw; overflow: hidden; border: .2cqw solid #34405a; }
   #bar { height: 100%; width: 50%; background: linear-gradient(#5fd07f, #3aa85c); border-radius: 1cqw; transition: width .8s ease; }
 
@@ -103,60 +107,49 @@
   #hs-red { left: 77.8%; top: 62%; width: 8.8%; height: 21%; }
   #stage.intro .hotspot, #stage.busy .hotspot { pointer-events: none; }
 
-  /* Die Mappe, die Merz auf den Tisch legt */
+  /* Beschriftung auf der ins Bild gemalten Mappe */
   #mappe {
     position: absolute;
-    left: 39%; top: 67%;
-    width: 21.5%; height: 26%;
+    left: 36%; top: 66.5%;
+    width: 26.5%; height: 28%;
     border: 0; padding: 0;
-    cursor: pointer;
     background: none;
+    border-radius: 1cqw;
+    cursor: pointer;
     z-index: 4;
     opacity: 0;
-    transform: translateY(-6%) scale(.97);
-    transition: opacity .6s ease, transform .6s ease;
+    transition: opacity .5s ease, box-shadow .2s;
     pointer-events: none;
-    perspective: 60cqw;
+    perspective: 40cqw;
   }
-  #mappe.da { opacity: 1; transform: none; pointer-events: auto; }
-  #mappe .deckel {
-    position: absolute; inset: 0;
-    background: linear-gradient(170deg, #6a96d4, #4673b3 60%, #3d65a0);
-    border-radius: .8cqw;
-    border: .25cqw solid #2c4b7c;
-    box-shadow: 0 1.2cqw 0 -.2cqw #e8e4da, 0 1.5cqw 0 -.2cqw #2c4b7c, 0 2cqw 2.5cqw rgba(60, 30, 10, .45);
-    transform: rotateX(28deg);
-    transform-origin: 50% 100%;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: .6cqw;
-  }
-  #mappe .schild {
-    background: #fff; color: var(--navy);
-    font-weight: 800; letter-spacing: .08em;
-    font-size: 1.35cqw;
-    padding: .45cqw 1.2cqw;
-    border-radius: .3cqw;
-    box-shadow: inset 0 0 0 .15cqw #c9d3e3;
-  }
-  #mappe .kurz {
-    color: #eaf1ff; font-weight: 600; font-size: 1.15cqw;
-    max-width: 90%; text-align: center; line-height: 1.2;
-  }
-  #mappe:hover .deckel, #mappe:focus-visible .deckel { filter: brightness(1.08); outline: none; }
-  #mappe.puls .deckel { animation: puls 1.6s ease-in-out infinite; }
+  #mappe.da { opacity: 1; pointer-events: auto; }
+  #mappe:hover, #mappe:focus-visible { box-shadow: 0 0 0 .35cqw rgba(255, 220, 120, .85), 0 0 2cqw rgba(255, 220, 120, .6); outline: none; }
+  #mappe.puls { animation: puls 1.6s ease-in-out infinite; }
   @keyframes puls {
-    0%, 100% { box-shadow: 0 1.2cqw 0 -.2cqw #e8e4da, 0 1.5cqw 0 -.2cqw #2c4b7c, 0 2cqw 2.5cqw rgba(60, 30, 10, .45), 0 0 0 0 rgba(255, 220, 120, .0); }
-    50% { box-shadow: 0 1.2cqw 0 -.2cqw #e8e4da, 0 1.5cqw 0 -.2cqw #2c4b7c, 0 2cqw 2.5cqw rgba(60, 30, 10, .45), 0 0 0 .5cqw rgba(255, 220, 120, .9); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 220, 120, 0); }
+    50% { box-shadow: 0 0 0 .5cqw rgba(255, 220, 120, .9); }
   }
+  #mappe .etikett {
+    position: absolute; left: 50%; top: 40%;
+    transform: translate(-50%, -50%) rotateX(38deg);
+    display: flex; flex-direction: column; align-items: center; gap: .3cqw;
+    background: #fff;
+    padding: .6cqw 1.4cqw .7cqw;
+    border-radius: .3cqw;
+    box-shadow: inset 0 0 0 .15cqw #c9d3e3, 0 .2cqw .4cqw rgba(0, 0, 0, .2);
+    max-width: 85%;
+  }
+  #mappe .schild { color: var(--navy); font-weight: 800; letter-spacing: .08em; font-size: 1.35cqw; }
+  #mappe .kurz { color: #4b5b78; font-weight: 600; font-size: 1.1cqw; text-align: center; line-height: 1.15; }
   #mappe .abdruck {
     position: absolute; left: 50%; top: 45%;
     transform: translate(-50%, -50%) rotate(-12deg) scale(2.2);
     font-weight: 800; letter-spacing: .06em;
-    font-size: 1.9cqw;
+    font-size: 2cqw;
     padding: .4cqw 1.2cqw;
     border: .35cqw solid currentColor;
     border-radius: .5cqw;
-    background: rgba(255, 255, 255, .55);
+    background: rgba(255, 255, 255, .6);
     opacity: 0;
     pointer-events: none;
   }
@@ -198,7 +191,7 @@
   #overlay.offen { display: flex; animation: einblenden .25s ease; }
   @keyframes einblenden { from { opacity: 0; } }
   .panel {
-    width: min(62cqw, 100%);
+    width: min(64cqw, 100%);
     max-height: 100%;
     overflow: auto;
     border-radius: 1.2cqw;
@@ -207,6 +200,7 @@
     line-height: 1.5;
     box-shadow: 0 2cqw 5cqw rgba(0, 0, 0, .35);
     animation: hoch .3s ease;
+    user-select: text;
   }
   @keyframes hoch { from { transform: translateY(2cqw); opacity: 0; } }
   .panel h1, .panel h2 { margin: 0 0 .5em; line-height: 1.2; }
@@ -256,31 +250,54 @@
   .buch .klein { color: #b9c2d6; }
 
   .ergebnis { background: #fff; }
+  .ergebnis .marken { display: flex; flex-wrap: wrap; gap: .5em; margin-bottom: .6em; }
   .ergebnis .marke {
     display: inline-block;
     font-weight: 800; font-size: .85em; letter-spacing: .06em; text-transform: uppercase;
-    padding: .25em .7em; border-radius: .4em; margin-bottom: .6em;
+    padding: .25em .7em; border-radius: .4em;
   }
   .ergebnis.richtig .marke { background: #e3f4ea; color: var(--green-dark); }
   .ergebnis.falsch .marke { background: #fbe5e5; color: var(--red-dark); }
+  .ergebnis .marke.punkte { background: #fdf3d6; color: #7a5a06; }
   .ergebnis.richtig h2 { color: var(--green-dark); }
   .ergebnis.falsch h2 { color: var(--red-dark); }
   .ergebnis ul { padding-left: 1.2em; margin: .3em 0 0; }
   .ergebnis li { margin-bottom: .35em; }
   .ergebnis .loesung { background: #f3f0e8; border-radius: .5em; padding: .8em 1em; margin-bottom: .8em; }
+  .ergebnis .wirklich { border-left: .3em solid #185fa5; padding: .2em 0 .2em .9em; margin-bottom: .9em; }
+  .ergebnis .wirklich b { color: #185fa5; }
 
   .start { background: var(--paper); text-align: center; }
   .start h1 { color: var(--navy); }
   .start .regeln { text-align: left; display: inline-block; margin: .3em 0 .6em; padding-left: 1.2em; }
   .start .regeln li { margin-bottom: .3em; }
   .start .knoepfe { justify-content: center; }
+  .namensfeld { display: flex; flex-direction: column; align-items: center; gap: .35em; margin: .4em 0 .2em; }
+  .namensfeld label { font-weight: 700; }
+  .namensfeld input {
+    font: inherit; font-size: 1.1em;
+    width: min(22em, 100%);
+    padding: .45em .8em;
+    border: 2px solid #cfc8b8; border-radius: .6em;
+    background: #fff; color: var(--ink);
+    text-align: center;
+  }
+  .namensfeld input:focus { outline: none; border-color: var(--navy); }
+  .fehler { color: var(--red-dark); font-size: .85em; min-height: 1.2em; }
 
   .ende { background: var(--paper); }
-  .ende .punkte { font-size: 3em; font-weight: 800; color: var(--navy); line-height: 1; margin: .1em 0 .2em; }
+  .ende .kopfzeile { display: flex; align-items: baseline; gap: 1em; flex-wrap: wrap; }
+  .ende .gesamt { font-size: 2.6em; font-weight: 800; color: var(--navy); line-height: 1; }
   .ende table { width: 100%; border-collapse: collapse; font-size: .9em; }
-  .ende td { padding: .4em .3em; border-bottom: 1px solid #e7e2d6; vertical-align: top; }
+  .ende td, .ende th { padding: .35em .3em; border-bottom: 1px solid #e7e2d6; vertical-align: top; text-align: left; }
+  .ende th { font-size: .8em; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
   .ende .ok { color: var(--green-dark); font-weight: 800; }
   .ende .nok { color: var(--red-dark); font-weight: 800; }
+  .ende .zahl { text-align: right; font-variant-numeric: tabular-nums; }
+  .ende tr.du td { background: #fdf3d6; font-weight: 700; }
+  .ende h3 { margin: 1.1em 0 .3em; font-size: 1.1em; }
+  .spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6em; }
+  @media (max-width: 700px) { .spalten { grid-template-columns: 1fr; } }
 
   #quer { display: none; position: fixed; left: 0; right: 0; bottom: 6vh; text-align: center; color: #c9d3e6; font-size: 15px; padding: 0 16px; }
   @media (orientation: portrait) and (max-width: 700px) {
@@ -294,9 +311,9 @@
 <body>
 <div id="stage" class="busy">
   <img id="bg" src="assets/buero.jpg" alt="Amtszimmer des Bundespräsidenten mit Schreibtisch">
-  <video id="intro" src="assets/intro.mp4" muted playsinline preload="auto" poster="assets/buero.jpg"></video>
+  <video id="intro" muted playsinline preload="auto"></video>
 
-  <div class="hud left"><span class="menu" aria-hidden="true"></span><span>AKTE <span id="akteNr">1</span> / <span id="akteGesamt">6</span></span></div>
+  <div class="hud left"><span class="menu" aria-hidden="true"></span><span class="spieler" id="hudName"></span><span class="trenner">·</span><span>AKTE <span id="akteNr">1</span> / <span id="akteGesamt">6</span></span></div>
   <div class="hud right"><span>VERTRAUEN</span><div class="bar" role="progressbar" aria-label="Vertrauen" aria-valuemin="0" aria-valuemax="100"><div id="bar"></div></div></div>
 
   <button id="hs-gg" class="hotspot" aria-label="Grundgesetz aufschlagen"><span class="tip">Grundgesetz: Prüfhinweise</span></button>
@@ -304,7 +321,7 @@
   <button id="hs-red" class="hotspot" aria-label="Ablehnen: Ausfertigung verweigern"><span class="tip">Ablehnen</span></button>
 
   <button id="mappe" aria-label="Gesetzentwurf öffnen">
-    <span class="deckel"><span class="schild">GESETZENTWURF</span><span class="kurz" id="mappeKurz"></span></span>
+    <span class="etikett"><span class="schild">GESETZENTWURF</span><span class="kurz" id="mappeKurz"></span></span>
     <span class="abdruck" id="abdruck"></span>
   </button>
 
@@ -319,19 +336,30 @@
 <script src="faelle.js"></script>
 <script>
   const RUNDEN = 6;
+  const PUNKTE_RICHTIG = 100;
+  const TEMPO_BONUS = 50;          // gibt es nur bei richtiger Antwort
+  const TEMPO_FENSTER = 60;        // Sekunden, bis der Bonus auf 0 gefallen ist
+  const BESTENLISTE_KEY = "be-a-president-bestenliste";
 
   const stage = document.getElementById("stage");
+  const bg = document.getElementById("bg");
   const video = document.getElementById("intro");
   const overlay = document.getElementById("overlay");
   const mappe = document.getElementById("mappe");
   const abdruck = document.getElementById("abdruck");
   const caption = document.getElementById("caption");
 
+  let spielerName = "";
   let runde = [];
   let nr = 0;
+  let richtige = 0;
   let punkte = 0;
   let protokoll = [];
   let entschieden = false;
+  let aktenStart = 0;
+
+  // Bilder vorladen, damit beim Überblenden nichts flackert
+  ["assets/buero.jpg", "assets/buero_mappe.jpg"].forEach(src => { const i = new Image(); i.src = src; });
 
   function mischen(liste) {
     const a = liste.slice();
@@ -346,8 +374,8 @@
   function fallauswahl() {
     for (;;) {
       const auswahl = mischen(FAELLE).slice(0, RUNDEN);
-      const ja = auswahl.filter(f => f.loesung !== "ablehnen").length;
-      const nein = auswahl.filter(f => f.loesung !== "unterschreiben").length;
+      const ja = auswahl.filter(f => f.loesung === "unterschreiben").length;
+      const nein = auswahl.filter(f => f.loesung === "ablehnen").length;
       if (ja >= 2 && nein >= 2) return auswahl;
     }
   }
@@ -359,8 +387,8 @@
   function zeigePanel(html) {
     overlay.innerHTML = html;
     overlay.classList.add("offen");
-    const erster = overlay.querySelector("button");
-    if (erster) erster.focus({ preventScroll: true });
+    const erstes = overlay.querySelector("input, button");
+    if (erstes) erstes.focus({ preventScroll: true });
   }
   function schliessePanel() {
     overlay.classList.remove("offen");
@@ -373,39 +401,74 @@
   });
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && overlay.dataset.schliessbar === "ja") schliessePanel();
+    if (e.key === "Enter" && e.target.id === "nameEingabe") { e.preventDefault(); aktionen.los(); }
   });
 
   function fall() { return runde[nr]; }
 
   function aktualisiereHud() {
+    document.getElementById("hudName").textContent = spielerName.toUpperCase();
     document.getElementById("akteNr").textContent = Math.min(nr + 1, RUNDEN);
     document.getElementById("akteGesamt").textContent = RUNDEN;
-    const anteil = nr === 0 && protokoll.length === 0 ? 50 : Math.round(punkte / protokoll.length * 100);
+    const anteil = protokoll.length === 0 ? 50 : Math.round(richtige / protokoll.length * 100);
     document.getElementById("bar").style.width = Math.max(4, anteil) + "%";
     document.querySelector(".bar").setAttribute("aria-valuenow", anteil);
   }
 
+  // ---------- Bestenliste (wird im Browser dieses Geräts gespeichert) ----------
+
+  function ladeBestenliste() {
+    try {
+      const daten = JSON.parse(localStorage.getItem(BESTENLISTE_KEY) || "[]");
+      return Array.isArray(daten) ? daten : [];
+    } catch (e) { return []; }
+  }
+  function speichereErgebnis(eintrag) {
+    const liste = ladeBestenliste();
+    liste.push(eintrag);
+    liste.sort((a, b) => b.punkte - a.punkte || b.richtige - a.richtige || a.zeit - b.zeit);
+    try { localStorage.setItem(BESTENLISTE_KEY, JSON.stringify(liste.slice(0, 50))); } catch (e) { /* ohne Speichern weiter */ }
+    return liste;
+  }
+
   // ---------- Ablauf ----------
 
-  function startbildschirm() {
+  function startbildschirm(fehler = "") {
     overlay.dataset.schliessbar = "nein";
     zeigePanel(`
       <div class="panel start">
         <h1>Be a President</h1>
-        <p>Du bist Bundespräsident. Das Kabinett legt dir Gesetze vor. Bevor ein Gesetz gilt, musst du es <b>ausfertigen</b>, also unterschreiben (Art. 82 GG). Vorher prüfst du: Ist es richtig zustande gekommen? Verstößt es offensichtlich gegen das Grundgesetz?</p>
+        <p>Du bist Bundespräsident. Merkel, Scholz und Merz legen dir echte Gesetze vor. Bevor ein Gesetz gilt, musst du es <b>ausfertigen</b>, also unterschreiben (Art. 82 GG). Vorher prüfst du: Ist es richtig zustande gekommen? Verstößt es offensichtlich gegen das Grundgesetz?</p>
         <ul class="regeln">
           <li>Klick auf die <b>blaue Mappe</b>: Worum geht es?</li>
           <li>Klick auf das <b>Grundgesetz</b>: Prüfhinweise.</li>
           <li><b>Grüner Stempel</b>: ausfertigen. <b>Roter Stempel</b>: ablehnen.</li>
         </ul>
-        <p class="klein">${RUNDEN} Akten pro Amtszeit, zufällig ausgewählt. Dein Nachbar bekommt andere.</p>
+        <div class="namensfeld">
+          <label for="nameEingabe">Dein Name</label>
+          <input id="nameEingabe" type="text" maxlength="20" autocomplete="off" placeholder="Frank-Walter" value="${esc(spielerName)}">
+          <div class="fehler" id="nameFehler">${esc(fehler)}</div>
+        </div>
+        <p class="klein">${RUNDEN} zufällige Akten. Richtig: ${PUNKTE_RICHTIG} Punkte, dazu bis zu ${TEMPO_BONUS} Bonuspunkte für schnelle Entscheidungen.</p>
         <div class="knoepfe"><button class="knopf haupt" data-aktion="los">Amtszeit beginnen</button></div>
       </div>`);
+    const eingabe = document.getElementById("nameEingabe");
+    eingabe.addEventListener("input", () => { document.getElementById("nameFehler").textContent = ""; });
   }
 
   function neueAmtszeit() {
+    const eingabe = document.getElementById("nameEingabe");
+    if (eingabe) {
+      const name = eingabe.value.trim().replace(/\s+/g, " ");
+      if (!name) {
+        document.getElementById("nameFehler").textContent = "Gib zuerst deinen Namen ein.";
+        eingabe.focus();
+        return;
+      }
+      spielerName = name;
+    }
     runde = fallauswahl();
-    nr = 0; punkte = 0; protokoll = [];
+    nr = 0; richtige = 0; punkte = 0; protokoll = [];
     aktualisiereHud();
     schliessePanel();
     naechsteAkte();
@@ -417,12 +480,17 @@
     mappe.classList.remove("da", "puls");
     abdruck.className = "abdruck";
     abdruck.textContent = "";
-    document.getElementById("mappeKurz").textContent = fall().kurztitel;
+    const f = fall();
+    const k = KANZLER[f.kanzler];
+    document.getElementById("mappeKurz").textContent = f.kurztitel;
 
     stage.classList.add("intro", "busy");
-    caption.textContent = `Das Kabinett bringt Akte ${nr + 1} von ${RUNDEN}`;
+    caption.textContent = `${k.name} bringt Akte ${nr + 1} von ${RUNDEN}`;
     caption.classList.add("zeigen");
+    video.src = k.video;
     video.currentTime = 0;
+    // Hinter dem Video liegt schon der Tisch mit Mappe; beim Ausblenden wird er sichtbar
+    setTimeout(() => { bg.src = "assets/buero_mappe.jpg"; }, 900);
     const p = video.play();
     if (p && p.catch) p.catch(() => zeigeSchreibtisch());
   }
@@ -430,6 +498,7 @@
   let schreibtischTimer = null;
   function zeigeSchreibtisch() {
     if (!stage.classList.contains("intro")) return;
+    bg.src = "assets/buero_mappe.jpg";
     stage.classList.remove("intro");
     caption.classList.remove("zeigen");
     clearTimeout(schreibtischTimer);
@@ -438,7 +507,8 @@
       mappe.classList.add("da");
       if (nr === 0) mappe.classList.add("puls");
       stage.classList.remove("busy");
-    }, 450);
+      aktenStart = performance.now();
+    }, 600);
   }
   video.addEventListener("ended", zeigeSchreibtisch);
   video.addEventListener("error", zeigeSchreibtisch);
@@ -451,7 +521,7 @@
     overlay.dataset.schliessbar = "ja";
     zeigePanel(`
       <div class="panel papier">
-        <div class="kopf">Deutscher Bundestag · Drucksache ${esc(f.drucksache)} · Akte ${nr + 1} von ${RUNDEN}</div>
+        <div class="kopf">Bundesregierung · ${esc(KANZLER[f.kanzler].name)} · ${f.jahr} · Akte ${nr + 1} von ${RUNDEN}</div>
         <div class="art">Gesetzentwurf</div>
         <h2>${esc(f.titel)}</h2>
         <p><b>Worum geht es?</b> ${esc(f.worum)}</p>
@@ -489,9 +559,13 @@
     mappe.classList.remove("puls");
 
     const f = fall();
+    const sekunden = (performance.now() - aktenStart) / 1000;
     const richtig = f.loesung === "beides" || f.loesung === wahl;
-    if (richtig) punkte++;
-    protokoll.push({ fall: f, wahl, richtig });
+    const bonus = richtig ? Math.round(TEMPO_BONUS * Math.max(0, 1 - sekunden / TEMPO_FENSTER)) : 0;
+    const erhalten = richtig ? PUNKTE_RICHTIG + bonus : 0;
+    if (richtig) richtige++;
+    punkte += erhalten;
+    protokoll.push({ fall: f, wahl, richtig, erhalten, sekunden });
 
     abdruck.textContent = wahl === "unterschreiben" ? "AUSGEFERTIGT" : "ABGELEHNT";
     abdruck.style.color = wahl === "unterschreiben" ? "var(--green)" : "var(--red)";
@@ -499,25 +573,28 @@
     abdruck.classList.add("zeigen");
     stempelGeraeusch();
 
-    setTimeout(() => zeigeErgebnis(f, wahl, richtig), 1000);
+    setTimeout(() => zeigeErgebnis(f, wahl, richtig, erhalten, bonus), 1000);
   }
 
-  function zeigeErgebnis(f, wahl, richtig) {
+  function zeigeErgebnis(f, wahl, richtig, erhalten, bonus) {
     aktualisiereHud();
     const loesungText = {
       unterschreiben: "Richtig wäre: ausfertigen.",
       ablehnen: "Richtig wäre: ablehnen.",
       beides: "Beide Entscheidungen sind vertretbar."
     }[f.loesung];
-    const artText = f.art === "formal" ? " Das Gesetz scheitert schon am Verfahren."
-      : f.art === "inhaltlich" ? " Das Gesetz scheitert am Inhalt." : "";
+    const fehlerText = f.loesung === "ablehnen" && f.fehler ? `<br><b>Problem:</b> ${esc(f.fehler)}` : "";
     const letzte = nr + 1 >= RUNDEN;
     overlay.dataset.schliessbar = "nein";
     zeigePanel(`
       <div class="panel ergebnis ${richtig ? "richtig" : "falsch"}">
-        <span class="marke">Du hast ${wahl === "unterschreiben" ? "ausgefertigt" : "abgelehnt"}</span>
+        <div class="marken">
+          <span class="marke">Du hast ${wahl === "unterschreiben" ? "ausgefertigt" : "abgelehnt"}</span>
+          <span class="marke punkte">+${erhalten} Punkte${bonus ? ` (davon ${bonus} Tempo-Bonus)` : ""}</span>
+        </div>
         <h2>${richtig ? "Richtig entschieden!" : "Leider falsch."}</h2>
-        <div class="loesung"><b>${loesungText}</b>${artText}<br>${esc(f.begruendung)}</div>
+        <div class="loesung"><b>${loesungText}</b> ${esc(f.begruendung)}${fehlerText}</div>
+        <p class="wirklich"><b>Was wirklich geschah:</b> ${esc(f.wirklich)}</p>
         <b>Die Prüfhinweise:</b>
         <ul>${f.hinweise.map(h => `<li>${esc(h)}</li>`).join("")}</ul>
         <div class="knoepfe"><button class="knopf haupt" data-aktion="weiter">${letzte ? "Zur Bilanz" : "Nächste Akte"}</button></div>
@@ -534,26 +611,60 @@
   function bilanz() {
     mappe.classList.remove("da");
     stage.classList.add("busy");
+    bg.src = "assets/buero.jpg";
+
+    const zeit = Math.round(protokoll.reduce((s, p) => s + p.sekunden, 0));
+    const eintrag = { name: spielerName, punkte, richtige, zeit, datum: Date.now() };
+    const liste = speichereErgebnis(eintrag);
+    const platz = liste.findIndex(e => e.datum === eintrag.datum && e.name === eintrag.name) + 1;
+
     const titel =
-      punkte === RUNDEN ? "Hüter der Verfassung" :
-      punkte >= RUNDEN - 2 ? "Solider Staatsnotar" :
-      punkte >= RUNDEN / 2 ? "Karlsruhe hat noch Arbeit" :
+      richtige === RUNDEN ? "Hüter der Verfassung" :
+      richtige >= RUNDEN - 2 ? "Solider Staatsnotar" :
+      richtige >= RUNDEN / 2 ? "Karlsruhe hat noch Arbeit" :
       "Bitte das Grundgesetz lesen";
+
+    const top = liste.slice(0, 10);
+    const duInTop = platz >= 1 && platz <= 10;
     overlay.dataset.schliessbar = "nein";
     zeigePanel(`
       <div class="panel ende">
-        <h2>Deine Amtszeit ist vorbei</h2>
-        <div class="punkte">${punkte} / ${RUNDEN}</div>
-        <p><b>${titel}</b></p>
-        <table>
-          ${protokoll.map(p => `
-            <tr>
-              <td class="${p.richtig ? "ok" : "nok"}">${p.richtig ? "✓" : "✗"}</td>
-              <td>${esc(p.fall.kurztitel)}</td>
-              <td>${p.wahl === "unterschreiben" ? "ausgefertigt" : "abgelehnt"}</td>
-            </tr>`).join("")}
-        </table>
-        <div class="knoepfe"><button class="knopf haupt" data-aktion="los">Neue Amtszeit</button></div>
+        <h2>Amtszeit vorbei, ${esc(spielerName)}!</h2>
+        <div class="kopfzeile">
+          <span class="gesamt">${punkte} Punkte</span>
+          <span><b>${richtige} von ${RUNDEN} richtig</b> · ${titel}</span>
+        </div>
+        <div class="spalten">
+          <div>
+            <h3>Deine Entscheidungen</h3>
+            <table>
+              ${protokoll.map(p => `
+                <tr>
+                  <td class="${p.richtig ? "ok" : "nok"}">${p.richtig ? "✓" : "✗"}</td>
+                  <td>${esc(p.fall.kurztitel)}</td>
+                  <td class="zahl">+${p.erhalten}</td>
+                </tr>`).join("")}
+            </table>
+          </div>
+          <div>
+            <h3>Bestenliste</h3>
+            <table>
+              <tr><th>#</th><th>Name</th><th class="zahl">Punkte</th></tr>
+              ${top.map((e, i) => `
+                <tr class="${i + 1 === platz ? "du" : ""}">
+                  <td>${i + 1}</td>
+                  <td>${esc(e.name)}</td>
+                  <td class="zahl">${e.punkte}</td>
+                </tr>`).join("")}
+              ${!duInTop && platz > 0 ? `<tr class="du"><td>${platz}</td><td>${esc(spielerName)}</td><td class="zahl">${punkte}</td></tr>` : ""}
+            </table>
+            <p class="klein">Die Bestenliste wird auf diesem Gerät gespeichert.</p>
+          </div>
+        </div>
+        <div class="knoepfe">
+          <button class="knopf haupt" data-aktion="nochmal">Neue Amtszeit</button>
+          <button class="knopf" data-aktion="anderer">Anderer Spieler</button>
+        </div>
       </div>`);
   }
 
@@ -576,6 +687,8 @@
 
   const aktionen = {
     los: neueAmtszeit,
+    nochmal: neueAmtszeit,
+    anderer: () => { spielerName = ""; aktualisiereHud(); startbildschirm(); },
     ja: () => entscheiden("unterschreiben"),
     nein: () => entscheiden("ablehnen"),
     gg: oeffneGrundgesetz,
