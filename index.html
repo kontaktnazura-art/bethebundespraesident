@@ -75,11 +75,51 @@
   .hud .spieler:empty + .trenner { display: none; }
   .bar { flex: 1; height: 2cqw; background: #34405a; border-radius: 1cqw; overflow: hidden; border: .2cqw solid #34405a; }
   #bar { height: 100%; width: 50%; background: linear-gradient(#5fd07f, #3aa85c); border-radius: 1cqw; transition: width .8s ease; }
+  .tonknopf {
+    flex: none; border: 0; background: none; cursor: pointer; padding: 0;
+    font-size: 1.8cqw; line-height: 1; filter: grayscale(.2);
+  }
+  .tonknopf:focus-visible { outline: .2cqw solid var(--navy); border-radius: .3cqw; }
+
+  /* Game over: alles wird grau, nur die Auswertung bleibt rot */
+  #bg, #intro, .hud, .hotspot, #mappe { transition: filter 1.8s ease; }
+  #stage.verloren #bg, #stage.verloren .hud, #stage.verloren .hotspot, #stage.verloren #mappe { filter: grayscale(1) brightness(.75) contrast(1.1); }
+  #overlay.rot { background: rgba(70, 0, 0, .55); }
+
+  /* Schlagzeile im Endbildschirm */
+  .zeitung {
+    background: #fbf8f1; border: 1px solid #d8d0bd; border-radius: .4em;
+    padding: .7em 1em .8em; margin: .2em 0 1em;
+    font-family: "Source Serif 4", Georgia, serif;
+  }
+  .zeitung .kopf { font-family: "Nunito", sans-serif; font-size: .72em; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--ink); padding-bottom: .3em; margin-bottom: .45em; display: flex; justify-content: space-between; }
+  .zeitung .eil { color: var(--red); }
+  .zeitung h3 { margin: 0 0 .25em; font-size: 1.35em; line-height: 1.2; }
+  .zeitung p { margin: 0; font-style: italic; color: #4a463e; }
+
+  .ende.perfekt { border-top: .6cqw solid var(--gold); background: linear-gradient(#fff8e1, var(--paper) 30%); }
+  .ende.perfekt .gesamt { color: #9a7412; }
+  .ende.gut { border-top: .6cqw solid var(--green); }
+  .ende.knapp { border-top: .6cqw solid #e0a526; }
+  .ende .pokal { font-size: 2.6em; line-height: 1; margin-bottom: .1em; animation: huepf 1.2s ease-in-out infinite; display: inline-block; }
+  @keyframes huepf { 50% { transform: translateY(-.15em) rotate(-6deg); } }
+
+  .panel.gameover { background: #fff6f6; border: .35cqw solid var(--red); }
+  .gameover .rotband { background: linear-gradient(135deg, #b32626, #7d1717); color: #fff; margin: -2.4cqw -3cqw 1em; padding: 1.6cqw 3cqw 1.4cqw; }
+  .gameover .rotband h2 { color: #fff; margin: .2em 0 .3em; }
+  .gameover .rotband p { color: #ffe1e1; margin: 0; }
+  .gameover .gesamt { color: var(--red-dark); }
+  .gameover .stempelzeile { border-color: #fff; color: #fff; }
+
+  .ende tr.erster td { background: linear-gradient(90deg, #fff1bf, #fff8e1); font-weight: 800; }
+  .ende tr.erster td:nth-child(2)::before { content: "👑 "; }
+
+  .konfetti { position: absolute; top: -3%; width: .9cqw; height: 1.4cqw; z-index: 20; pointer-events: none; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110cqh) rotate(720deg); } }
+
   #bar.wackelig { background: linear-gradient(#f2c94c, #d9a520); }
   #bar.kritisch { background: linear-gradient(#ef6b6b, #c63d3d); }
 
-  .panel.gameover { background: #fff; border-top: .6cqw solid var(--red); }
-  .gameover h2 { color: var(--red-dark); }
   .gameover .stempelzeile {
     display: inline-block; transform: rotate(-4deg);
     color: var(--red); border: .25em solid currentColor; border-radius: .3em;
@@ -324,7 +364,7 @@
   <img id="bg" src="assets/buero.jpg" alt="Amtszimmer des Bundespräsidenten mit Schreibtisch">
   <video id="intro" muted playsinline preload="auto"></video>
 
-  <div class="hud left"><span class="menu" aria-hidden="true"></span><span class="spieler" id="hudName"></span><span class="trenner">·</span><span>AKTE <span id="akteNr">1</span> / <span id="akteGesamt">6</span></span></div>
+  <div class="hud left"><button id="ton" class="tonknopf" aria-label="Ton aus">🔊</button><span class="spieler" id="hudName"></span><span class="trenner">·</span><span>AKTE <span id="akteNr">1</span> / <span id="akteGesamt">6</span></span></div>
   <div class="hud right"><span>VERTRAUEN</span><div class="bar" role="progressbar" aria-label="Vertrauen" aria-valuemin="0" aria-valuemax="100"><div id="bar"></div></div></div>
 
   <button id="hs-gg" class="hotspot" aria-label="Grundgesetz aufschlagen"><span class="tip">Grundgesetz: Prüfhinweise</span></button>
@@ -345,8 +385,9 @@
 <p id="quer">Tipp: Handy quer halten, dann wird das Spiel größer.</p>
 
 <!-- ?v= bei Änderungen hochzählen, damit Browser keine alte Version aus dem Cache nehmen -->
-<script src="config.js?v=3"></script>
-<script src="faelle.js?v=3"></script>
+<script src="config.js?v=4"></script>
+<script src="faelle.js?v=4"></script>
+<script src="sound.js?v=4"></script>
 <script>
   const RUNDEN = 6;
   const PUNKTE_RICHTIG = 100;
@@ -370,6 +411,7 @@
   let nr = 0;
   let richtige = 0;
   let vertrauen = VERTRAUEN_START;
+  let tiefstesVertrauen = VERTRAUEN_START;
   let punkte = 0;
   let protokoll = [];
   let entschieden = false;
@@ -488,7 +530,11 @@
       spielerName = name;
     }
     runde = fallauswahl();
-    nr = 0; richtige = 0; punkte = 0; protokoll = []; vertrauen = VERTRAUEN_START;
+    nr = 0; richtige = 0; punkte = 0; protokoll = []; vertrauen = tiefstesVertrauen = VERTRAUEN_START;
+    stage.classList.remove("verloren");
+    overlay.classList.remove("rot");
+    Sound.entsperren();
+    Sound.spiele("klick");
     aktualisiereHud();
     schliessePanel();
     naechsteAkte();
@@ -525,6 +571,7 @@
     schreibtischTimer = setTimeout(() => {
       video.pause();
       mappe.classList.add("da");
+      Sound.spiele("mappe");
       if (nr === 0) mappe.classList.add("puls");
       stage.classList.remove("busy");
       aktenStart = performance.now();
@@ -537,6 +584,7 @@
   function oeffneAkte() {
     if (entschieden) return;
     mappe.classList.remove("puls");
+    Sound.spiele("papier");
     const f = fall();
     overlay.dataset.schliessbar = "ja";
     zeigePanel(`
@@ -557,6 +605,7 @@
 
   function oeffneGrundgesetz() {
     if (entschieden) return;
+    Sound.spiele("buch");
     const f = fall();
     overlay.dataset.schliessbar = "ja";
     zeigePanel(`
@@ -585,6 +634,7 @@
     const erhalten = richtig ? PUNKTE_RICHTIG + bonus : 0;
     if (richtig) richtige++;
     vertrauen = Math.max(0, Math.min(100, vertrauen + (richtig ? VERTRAUEN_PLUS : -VERTRAUEN_MINUS)));
+    tiefstesVertrauen = Math.min(tiefstesVertrauen, vertrauen);
     punkte += erhalten;
     protokoll.push({ fall: f, wahl, richtig, erhalten, sekunden });
 
@@ -592,7 +642,7 @@
     abdruck.style.color = wahl === "unterschreiben" ? "var(--green)" : "var(--red)";
     void abdruck.offsetWidth;
     abdruck.classList.add("zeigen");
-    stempelGeraeusch();
+    Sound.spiele("stempel");
 
     setTimeout(() => zeigeErgebnis(f, wahl, richtig, erhalten, bonus), 1000);
   }
@@ -610,6 +660,8 @@
     const knopfText = verloren ? "Weiter" : letzte ? "Zur Bilanz" : "Nächste Akte";
     const warnung = verloren ? `<div class="warnung">Das Vertrauen der Bevölkerung ist auf 0 gefallen.</div>`
       : !richtig && vertrauen <= 20 ? `<div class="warnung">Vorsicht: Das Vertrauen ist fast aufgebraucht.</div>` : "";
+    Sound.spiele(richtig ? "richtig" : "falsch");
+    if (warnung && !verloren) setTimeout(() => Sound.spiele("warnung"), 700);
     overlay.dataset.schliessbar = "nein";
     zeigePanel(`
       <div class="panel ergebnis ${richtig ? "richtig" : "falsch"}">
@@ -643,26 +695,43 @@
     const zeit = Math.round(protokoll.reduce((s, p) => s + p.sekunden, 0));
     const eintrag = { name: spielerName, punkte, richtige, zeit, datum: Date.now() };
 
-    const titel =
-      richtige === RUNDEN ? "Hüter der Verfassung" :
-      richtige >= RUNDEN - 2 ? "Solider Staatsnotar" :
-      richtige >= RUNDEN / 2 ? "Karlsruhe hat noch Arbeit" :
-      "Bitte das Grundgesetz lesen";
+    const stufe =
+      gameOver ? "gameover" :
+      richtige === RUNDEN ? "perfekt" :
+      tiefstesVertrauen <= VERTRAUEN_MINUS || richtige <= 2 ? "knapp" :
+      richtige >= 4 ? "gut" : "mittel";
+    const s = ENDSTUFEN[stufe];
+    const [schlagzeile, unterzeile] = s.schlagzeilen[Math.floor(Math.random() * s.schlagzeilen.length)]
+      .map(text => esc(text.replaceAll("{n}", spielerName)));
+
+    const zeitung = `
+        <div class="zeitung">
+          <div class="kopf"><span>Bellevue-Bote</span><span class="eil">${gameOver ? "Eilmeldung" : "Aktuell"}</span></div>
+          <h3>${schlagzeile}</h3>
+          <p>${unterzeile}</p>
+        </div>`;
 
     const kopf = gameOver ? `
-        <div class="stempelzeile">MISSTRAUEN</div>
-        <h2>Rücktritt erzwungen, ${esc(spielerName)}!</h2>
-        <p>Nach Akte ${protokoll.length} von ${RUNDEN} hat dir die Bevölkerung das Vertrauen entzogen. Proteste vor Schloss Bellevue, Rücktrittsforderungen aus allen Fraktionen: Deine Amtszeit ist vorzeitig vorbei.</p>
+        <div class="rotband">
+          <div class="stempelzeile">MISSTRAUEN</div>
+          <h2>Rücktritt erzwungen, ${esc(spielerName)}!</h2>
+          <p>Nach Akte ${protokoll.length} von ${RUNDEN} hat dir die Bevölkerung das Vertrauen entzogen.</p>
+        </div>
+        ${zeitung}
         <p class="klein">In echt geht das übrigens nicht so einfach: Den Bundespräsidenten kann nur das Bundesverfassungsgericht nach einer Präsidentenanklage durch Bundestag oder Bundesrat des Amtes entheben (Art. 61 GG).</p>`
-      : `<h2>Amtszeit vorbei, ${esc(spielerName)}!</h2>`;
+      : `
+        ${stufe === "perfekt" ? `<div class="pokal">🏆</div>` : ""}
+        <h2>${esc(s.ueberschrift.replaceAll("{n}", spielerName))}</h2>
+        ${zeitung}`;
 
-    overlay.dataset.schliessbar = "nein";
-    zeigePanel(`
-      <div class="panel ende ${gameOver ? "gameover" : ""}">
+    const zeigen = () => {
+      overlay.dataset.schliessbar = "nein";
+      zeigePanel(`
+      <div class="panel ende ${stufe}">
         ${kopf}
         <div class="kopfzeile">
           <span class="gesamt">${punkte} Punkte</span>
-          <span><b>${richtige} von ${protokoll.length} richtig</b> · ${gameOver ? "Vorzeitig zurückgetreten" : titel}</span>
+          <span><b>${richtige} von ${protokoll.length} richtig</b> · ${s.titel}</span>
         </div>
         <div class="spalten">
           <div>
@@ -686,8 +755,73 @@
           <button class="knopf" data-aktion="anderer">Anderer Spieler</button>
         </div>
       </div>`);
+      Sound.spiele(s.sound);
+      if (stufe === "perfekt") konfetti();
+      zeigeBestenliste(eintrag);
+    };
 
-    zeigeBestenliste(eintrag);
+    if (gameOver) {
+      // Erst wird alles grau, dann kommt die rote Auswertung
+      stage.classList.add("verloren");
+      overlay.classList.add("rot");
+      setTimeout(zeigen, 1600);
+    } else {
+      zeigen();
+    }
+  }
+
+  const ENDSTUFEN = {
+    perfekt: {
+      titel: "Hüter der Verfassung", ueberschrift: "Perfekte Amtszeit, {n}!", sound: "fanfare",
+      schlagzeilen: [
+        ["Karlsruhe meldet Kurzarbeit an", "{n} lässt kein einziges verfassungswidriges Gesetz durch. Die Richter spielen jetzt Skat."],
+        ["Grundgesetz bittet um Autogramm", "Nach der fehlerfreien Amtszeit von {n} will das Grundgesetz unbedingt ein Selfie."],
+        ["Bellevue im Freudentaumel", "{n} prüft schneller, als der Bundestag tippen kann. Opposition sprachlos, Kanzleramt nervös."]
+      ]
+    },
+    gut: {
+      titel: "Solider Staatsnotar", ueberschrift: "Starke Amtszeit, {n}!", sound: "gut",
+      schlagzeilen: [
+        ["Solide wie ein Aktenordner", "{n} macht kaum Fehler. Die Opposition findet nichts zum Meckern und ist darüber sehr verärgert."],
+        ["Umfragehoch für {n}", "Die Bevölkerung vertraut dem Präsidenten. Fast so sehr wie dem Wetterbericht."]
+      ]
+    },
+    mittel: {
+      titel: "Karlsruhe hat noch Arbeit", ueberschrift: "Amtszeit überstanden, {n}.", sound: "mittel",
+      schlagzeilen: [
+        ["Präsidentschaft im Mittelfeld", "{n} liegt öfter richtig als falsch. Knapp. Sehr knapp. Experten nicken vorsichtig."],
+        ["Durchwachsene Bilanz im Schloss", "{n} hat das Grundgesetz offenbar quergelesen. Immerhin in die richtige Richtung."]
+      ]
+    },
+    knapp: {
+      titel: "Gerade so gerettet", ueberschrift: "Puh, das war knapp, {n}!", sound: "knapp",
+      schlagzeilen: [
+        ["{n} entgeht Rücktritt um Haaresbreite", "Berater empfehlen dringend das Grundgesetz als Bettlektüre."],
+        ["Gerade noch mal gut gegangen", "{n} rettet sich mit letzter Kraft ins Ziel. Die Umzugskartons bleiben vorsichtshalber gepackt."]
+      ]
+    },
+    gameover: {
+      titel: "Vorzeitig zurückgetreten", sound: "posaune",
+      schlagzeilen: [
+        ["{n} tritt zurück", "Vor Schloss Bellevue wurden bereits Umzugskartons gesichtet. Das Grundgesetz war für eine Stellungnahme nicht erreichbar."],
+        ["Aus im Schloss Bellevue", "{n} fordert einen Rücktritt vom Rücktritt. Leider zu spät."],
+        ["Karlsruhe bedankt sich für die viele Arbeit", "Nach der Amtszeit von {n} haben die Verfassungsrichter Überstunden für die nächsten drei Jahre."]
+      ]
+    }
+  };
+
+  function konfetti() {
+    const farben = ["#d9b45a", "#2f8f5b", "#c63d3d", "#1f2d4a", "#f2c94c", "#4f7fc0"];
+    for (let i = 0; i < 90; i++) {
+      const k = document.createElement("div");
+      k.className = "konfetti";
+      k.style.left = Math.random() * 100 + "%";
+      k.style.background = farben[i % farben.length];
+      k.style.animationDuration = 2.5 + Math.random() * 2.5 + "s";
+      k.style.animationDelay = Math.random() * 1.2 + "s";
+      stage.appendChild(k);
+      setTimeout(() => k.remove(), 6500);
+    }
   }
 
   // ---------- Bestenliste ----------
@@ -745,7 +879,7 @@
       <table>
         <tr><th>#</th><th>Nickname</th><th>Richtig</th><th class="zahl">Punkte</th></tr>
         ${top.map((e, i) => `
-          <tr class="${e.id === eigeneId ? "du" : ""}">
+          <tr class="${[e.id === eigeneId ? "du" : "", i === 0 ? "erster" : ""].join(" ")}">
             <td>${i + 1}</td>
             <td>${esc(e.name)}</td>
             <td>${e.richtige} / ${RUNDEN}</td>
@@ -756,27 +890,24 @@
       <p class="klein">${hinweis}</p>`;
   }
 
-  function stempelGeraeusch() {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const dauer = 0.18;
-      const puffer = ctx.createBuffer(1, ctx.sampleRate * dauer, ctx.sampleRate);
-      const daten = puffer.getChannelData(0);
-      for (let i = 0; i < daten.length; i++) daten[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / daten.length, 4);
-      const quelle = ctx.createBufferSource();
-      quelle.buffer = puffer;
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass"; filter.frequency.value = 700;
-      quelle.connect(filter).connect(ctx.destination);
-      quelle.start();
-      quelle.onended = () => ctx.close();
-    } catch (e) { /* ohne Ton weiterspielen */ }
+  const tonKnopf = document.getElementById("ton");
+  function zeigeTonStatus() {
+    tonKnopf.textContent = Sound.istAn() ? "🔊" : "🔇";
+    tonKnopf.setAttribute("aria-label", Sound.istAn() ? "Ton aus" : "Ton an");
   }
+  tonKnopf.addEventListener("click", () => { Sound.umschalten(); zeigeTonStatus(); Sound.spiele("klick"); });
+  zeigeTonStatus();
 
   const aktionen = {
     los: neueAmtszeit,
     nochmal: neueAmtszeit,
-    anderer: () => { spielerName = ""; aktualisiereHud(); startbildschirm(); },
+    anderer: () => {
+      spielerName = "";
+      stage.classList.remove("verloren");
+      overlay.classList.remove("rot");
+      aktualisiereHud();
+      startbildschirm();
+    },
     ja: () => entscheiden("unterschreiben"),
     nein: () => entscheiden("ablehnen"),
     gg: oeffneGrundgesetz,

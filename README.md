@@ -30,6 +30,7 @@ Solange `config.js` leer ist, speichert das Spiel die Ergebnisse nur auf dem jew
 
 - `index.html`: das Spiel
 - `faelle.js`: alle 14 Fälle mit Hinweisen, Lösung und „Was wirklich geschah“ (hier kann man Texte ändern)
+- `sound.js`: alle Soundeffekte (werden im Browser erzeugt, keine Audiodateien)
 - `config.js`: Zugangsdaten für die gemeinsame Bestenliste
 - `supabase.sql`: Tabelle für die Bestenliste
 - `assets/`: Hintergrundbilder und die Einlauf-Videos für Merkel, Scholz und Merz
