@@ -9,11 +9,11 @@ Ein kleines Browserspiel für unsere Präsentation: Du bist Bundespräsident und
 3. Klick auf das Grundgesetz: Prüfhinweise.
 4. Grüner Stempel = ausfertigen, roter Stempel = ablehnen.
 5. Danach siehst du, ob deine Entscheidung richtig war, warum, und was in echt passiert ist.
-6. Am Ende gibt es Punkte (100 pro richtiger Antwort plus Tempo-Bonus) und eine Bestenliste.
+6. Am Ende gibt es Punkte (100 pro richtiger Antwort plus Tempo-Bonus) und deine persönliche Bestenliste.
 
 Jede Amtszeit hat 6 Akten, zufällig aus 14 Fällen gezogen, immer mit mindestens 2 zum Unterschreiben und 2 zum Ablehnen. Wer nebeneinander sitzt, bekommt also unterschiedliche Fälle in anderer Reihenfolge.
 
-Die Bestenliste wird im Browser des jeweiligen Geräts gespeichert.
+Die Bestenliste zeigt nur die eigenen Amtszeiten unter dem eingegebenen Namen und wird im Browser des jeweiligen Geräts gespeichert.
 
 ## Dateien
 

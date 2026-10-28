@@ -427,7 +427,7 @@
     const liste = ladeBestenliste();
     liste.push(eintrag);
     liste.sort((a, b) => b.punkte - a.punkte || b.richtige - a.richtige || a.zeit - b.zeit);
-    try { localStorage.setItem(BESTENLISTE_KEY, JSON.stringify(liste.slice(0, 50))); } catch (e) { /* ohne Speichern weiter */ }
+    try { localStorage.setItem(BESTENLISTE_KEY, JSON.stringify(liste.slice(0, 200))); } catch (e) { /* ohne Speichern weiter */ }
     return liste;
   }
 
@@ -615,8 +615,11 @@
 
     const zeit = Math.round(protokoll.reduce((s, p) => s + p.sekunden, 0));
     const eintrag = { name: spielerName, punkte, richtige, zeit, datum: Date.now() };
-    const liste = speichereErgebnis(eintrag);
-    const platz = liste.findIndex(e => e.datum === eintrag.datum && e.name === eintrag.name) + 1;
+    // Nur die eigenen Amtszeiten unter diesem Namen, nicht die anderer Spieler
+    const schluessel = spielerName.toLowerCase();
+    const eigene = speichereErgebnis(eintrag).filter(e => e.name.toLowerCase() === schluessel);
+    const platz = eigene.findIndex(e => e.datum === eintrag.datum) + 1;
+    const rekord = platz === 1 && eigene.length > 1;
 
     const titel =
       richtige === RUNDEN ? "Hüter der Verfassung" :
@@ -624,8 +627,9 @@
       richtige >= RUNDEN / 2 ? "Karlsruhe hat noch Arbeit" :
       "Bitte das Grundgesetz lesen";
 
-    const top = liste.slice(0, 10);
-    const duInTop = platz >= 1 && platz <= 10;
+    const top = eigene.slice(0, 5);
+    const duInTop = platz >= 1 && platz <= 5;
+    const datum = ms => new Date(ms).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
     overlay.dataset.schliessbar = "nein";
     zeigePanel(`
       <div class="panel ende">
@@ -647,18 +651,19 @@
             </table>
           </div>
           <div>
-            <h3>Bestenliste</h3>
+            <h3>${rekord ? "Neuer Rekord!" : "Deine besten Amtszeiten"}</h3>
             <table>
-              <tr><th>#</th><th>Name</th><th class="zahl">Punkte</th></tr>
+              <tr><th>#</th><th>Datum</th><th>Richtig</th><th class="zahl">Punkte</th></tr>
               ${top.map((e, i) => `
                 <tr class="${i + 1 === platz ? "du" : ""}">
                   <td>${i + 1}</td>
-                  <td>${esc(e.name)}</td>
+                  <td>${datum(e.datum)}</td>
+                  <td>${e.richtige} / ${RUNDEN}</td>
                   <td class="zahl">${e.punkte}</td>
                 </tr>`).join("")}
-              ${!duInTop && platz > 0 ? `<tr class="du"><td>${platz}</td><td>${esc(spielerName)}</td><td class="zahl">${punkte}</td></tr>` : ""}
+              ${!duInTop && platz > 0 ? `<tr class="du"><td>${platz}</td><td>${datum(eintrag.datum)}</td><td>${richtige} / ${RUNDEN}</td><td class="zahl">${punkte}</td></tr>` : ""}
             </table>
-            <p class="klein">Die Bestenliste wird auf diesem Gerät gespeichert.</p>
+            <p class="klein">Nur deine Ergebnisse unter dem Namen „${esc(spielerName)}“, gespeichert auf diesem Gerät.</p>
           </div>
         </div>
         <div class="knoepfe">
