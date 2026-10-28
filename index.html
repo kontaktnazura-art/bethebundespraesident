@@ -75,6 +75,17 @@
   .hud .spieler:empty + .trenner { display: none; }
   .bar { flex: 1; height: 2cqw; background: #34405a; border-radius: 1cqw; overflow: hidden; border: .2cqw solid #34405a; }
   #bar { height: 100%; width: 50%; background: linear-gradient(#5fd07f, #3aa85c); border-radius: 1cqw; transition: width .8s ease; }
+  #bar.wackelig { background: linear-gradient(#f2c94c, #d9a520); }
+  #bar.kritisch { background: linear-gradient(#ef6b6b, #c63d3d); }
+
+  .panel.gameover { background: #fff; border-top: .6cqw solid var(--red); }
+  .gameover h2 { color: var(--red-dark); }
+  .gameover .stempelzeile {
+    display: inline-block; transform: rotate(-4deg);
+    color: var(--red); border: .25em solid currentColor; border-radius: .3em;
+    font-weight: 800; letter-spacing: .08em; padding: .1em .6em; margin-bottom: .8em;
+  }
+  .ergebnis .warnung { background: #fbe5e5; color: var(--red-dark); border-radius: .5em; padding: .6em 1em; margin-bottom: .8em; font-weight: 700; }
 
   /* Klickbare Gegenstände auf dem Tisch */
   .hotspot {
@@ -334,14 +345,17 @@
 <p id="quer">Tipp: Handy quer halten, dann wird das Spiel größer.</p>
 
 <!-- ?v= bei Änderungen hochzählen, damit Browser keine alte Version aus dem Cache nehmen -->
-<script src="config.js?v=2"></script>
-<script src="faelle.js?v=2"></script>
+<script src="config.js?v=3"></script>
+<script src="faelle.js?v=3"></script>
 <script>
   const RUNDEN = 6;
   const PUNKTE_RICHTIG = 100;
   const TEMPO_BONUS = 50;          // gibt es nur bei richtiger Antwort
   const TEMPO_FENSTER = 60;        // Sekunden, bis der Bonus auf 0 gefallen ist
   const BESTENLISTE_KEY = "be-a-president-bestenliste";
+  const VERTRAUEN_START = 60;      // Prozent; bei 0 ist das Spiel vorbei
+  const VERTRAUEN_PLUS = 15;
+  const VERTRAUEN_MINUS = 20;
 
   const stage = document.getElementById("stage");
   const bg = document.getElementById("bg");
@@ -355,6 +369,7 @@
   let runde = [];
   let nr = 0;
   let richtige = 0;
+  let vertrauen = VERTRAUEN_START;
   let punkte = 0;
   let protokoll = [];
   let entschieden = false;
@@ -412,8 +427,10 @@
     document.getElementById("hudName").textContent = spielerName.toUpperCase();
     document.getElementById("akteNr").textContent = Math.min(nr + 1, RUNDEN);
     document.getElementById("akteGesamt").textContent = RUNDEN;
-    const anteil = protokoll.length === 0 ? 50 : Math.round(richtige / protokoll.length * 100);
-    document.getElementById("bar").style.width = Math.max(4, anteil) + "%";
+    const anteil = vertrauen;
+    const bar = document.getElementById("bar");
+    bar.style.width = Math.max(4, anteil) + "%";
+    bar.className = anteil <= 25 ? "kritisch" : anteil <= 40 ? "wackelig" : "";
     document.querySelector(".bar").setAttribute("aria-valuenow", anteil);
   }
 
@@ -450,6 +467,7 @@
           <li>Klick auf die <b>blaue Mappe</b>: Worum geht es?</li>
           <li>Klick auf das <b>Grundgesetz</b>: Prüfhinweise.</li>
           <li><b>Grüner Stempel</b>: ausfertigen. <b>Roter Stempel</b>: ablehnen.</li>
+          <li>Falsche Entscheidungen kosten <b>Vertrauen</b>. Fällt es auf 0, musst du zurücktreten.</li>
         </ul>
         <p class="klein">${RUNDEN} zufällige Akten. Richtig: ${PUNKTE_RICHTIG} Punkte, dazu bis zu ${TEMPO_BONUS} Bonuspunkte für schnelle Entscheidungen.</p>
         <div class="knoepfe"><button class="knopf haupt" data-aktion="los">Amtszeit beginnen</button></div>
@@ -470,7 +488,7 @@
       spielerName = name;
     }
     runde = fallauswahl();
-    nr = 0; richtige = 0; punkte = 0; protokoll = [];
+    nr = 0; richtige = 0; punkte = 0; protokoll = []; vertrauen = VERTRAUEN_START;
     aktualisiereHud();
     schliessePanel();
     naechsteAkte();
@@ -566,6 +584,7 @@
     const bonus = richtig ? Math.round(TEMPO_BONUS * Math.max(0, 1 - sekunden / TEMPO_FENSTER)) : 0;
     const erhalten = richtig ? PUNKTE_RICHTIG + bonus : 0;
     if (richtig) richtige++;
+    vertrauen = Math.max(0, Math.min(100, vertrauen + (richtig ? VERTRAUEN_PLUS : -VERTRAUEN_MINUS)));
     punkte += erhalten;
     protokoll.push({ fall: f, wahl, richtig, erhalten, sekunden });
 
@@ -587,6 +606,10 @@
     }[f.loesung];
     const fehlerText = f.loesung === "ablehnen" && f.fehler ? `<br><b>Problem:</b> ${esc(f.fehler)}` : "";
     const letzte = nr + 1 >= RUNDEN;
+    const verloren = vertrauen <= 0;
+    const knopfText = verloren ? "Weiter" : letzte ? "Zur Bilanz" : "Nächste Akte";
+    const warnung = verloren ? `<div class="warnung">Das Vertrauen der Bevölkerung ist auf 0 gefallen.</div>`
+      : !richtig && vertrauen <= 20 ? `<div class="warnung">Vorsicht: Das Vertrauen ist fast aufgebraucht.</div>` : "";
     overlay.dataset.schliessbar = "nein";
     zeigePanel(`
       <div class="panel ergebnis ${richtig ? "richtig" : "falsch"}">
@@ -595,22 +618,24 @@
           <span class="marke punkte">+${erhalten} Punkte${bonus ? ` (davon ${bonus} Tempo-Bonus)` : ""}</span>
         </div>
         <h2>${richtig ? "Richtig entschieden!" : "Leider falsch."}</h2>
+        ${warnung}
         <div class="loesung"><b>${loesungText}</b> ${esc(f.begruendung)}${fehlerText}</div>
         <p class="wirklich"><b>Was wirklich geschah:</b> ${esc(f.wirklich)}</p>
         <b>Die Prüfhinweise:</b>
         <ul>${f.hinweise.map(h => `<li>${esc(h)}</li>`).join("")}</ul>
-        <div class="knoepfe"><button class="knopf haupt" data-aktion="weiter">${letzte ? "Zur Bilanz" : "Nächste Akte"}</button></div>
+        <div class="knoepfe"><button class="knopf haupt" data-aktion="weiter">${knopfText}</button></div>
       </div>`);
   }
 
   function weiter() {
     schliessePanel();
     nr++;
-    if (nr >= RUNDEN) bilanz();
+    if (vertrauen <= 0) bilanz(true);
+    else if (nr >= RUNDEN) bilanz();
     else naechsteAkte();
   }
 
-  function bilanz() {
+  function bilanz(gameOver = false) {
     mappe.classList.remove("da");
     stage.classList.add("busy");
     bg.src = "assets/buero.jpg";
@@ -624,13 +649,20 @@
       richtige >= RUNDEN / 2 ? "Karlsruhe hat noch Arbeit" :
       "Bitte das Grundgesetz lesen";
 
+    const kopf = gameOver ? `
+        <div class="stempelzeile">MISSTRAUEN</div>
+        <h2>Rücktritt erzwungen, ${esc(spielerName)}!</h2>
+        <p>Nach Akte ${protokoll.length} von ${RUNDEN} hat dir die Bevölkerung das Vertrauen entzogen. Proteste vor Schloss Bellevue, Rücktrittsforderungen aus allen Fraktionen: Deine Amtszeit ist vorzeitig vorbei.</p>
+        <p class="klein">In echt geht das übrigens nicht so einfach: Den Bundespräsidenten kann nur das Bundesverfassungsgericht nach einer Präsidentenanklage durch Bundestag oder Bundesrat des Amtes entheben (Art. 61 GG).</p>`
+      : `<h2>Amtszeit vorbei, ${esc(spielerName)}!</h2>`;
+
     overlay.dataset.schliessbar = "nein";
     zeigePanel(`
-      <div class="panel ende">
-        <h2>Amtszeit vorbei, ${esc(spielerName)}!</h2>
+      <div class="panel ende ${gameOver ? "gameover" : ""}">
+        ${kopf}
         <div class="kopfzeile">
           <span class="gesamt">${punkte} Punkte</span>
-          <span><b>${richtige} von ${RUNDEN} richtig</b> · ${titel}</span>
+          <span><b>${richtige} von ${protokoll.length} richtig</b> · ${gameOver ? "Vorzeitig zurückgetreten" : titel}</span>
         </div>
         <div class="spalten">
           <div>
