@@ -666,7 +666,9 @@
       ...optionen,
       headers: {
         apikey: BESTENLISTE_ONLINE.key,
-        Authorization: `Bearer ${BESTENLISTE_ONLINE.key}`,
+        // Alte "anon"-Keys (beginnen mit eyJ) brauchen zusätzlich den Authorization-Header,
+        // neue "sb_publishable_"-Keys nicht
+        ...(BESTENLISTE_ONLINE.key.startsWith("eyJ") ? { Authorization: `Bearer ${BESTENLISTE_ONLINE.key}` } : {}),
         "Content-Type": "application/json",
         ...(optionen.headers || {})
       }
