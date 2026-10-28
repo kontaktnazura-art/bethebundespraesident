@@ -268,6 +268,7 @@
     background: #e7e3d9; color: var(--ink);
   }
   .knopf:hover { filter: brightness(.95); }
+  a.knopf { text-decoration: none; display: inline-block; }
   .knopf.haupt { background: var(--navy); color: #fff; }
   .knopf.gruen { background: var(--green); color: #fff; }
   .knopf.rot { background: var(--red); color: #fff; }
@@ -753,6 +754,7 @@
         <div class="knoepfe">
           <button class="knopf haupt" data-aktion="nochmal">Neue Amtszeit</button>
           <button class="knopf" data-aktion="anderer">Anderer Spieler</button>
+          <a class="knopf" href="scoreboard/" target="_blank" rel="noopener">Ganze Bestenliste ↗</a>
         </div>
       </div>`);
       Sound.spiele(s.sound);

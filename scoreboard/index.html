@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bestenliste · Be a President</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1f2d4a;
+    --navy-dark: #141d31;
+    --gold: #d9b45a;
+    --silber: #c3c9d4;
+    --bronze: #c8875a;
+    --text: #eef1f7;
+    --muted: #9aa6bd;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: radial-gradient(ellipse at top, #263759, var(--navy-dark) 70%);
+    color: var(--text);
+    font-family: "Nunito", system-ui, sans-serif;
+    padding: clamp(16px, 3vw, 48px);
+  }
+  .rahmen { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) clamp(180px, 20vw, 280px); gap: clamp(16px, 3vw, 48px); align-items: start; }
+  @media (max-width: 800px) { .rahmen { grid-template-columns: minmax(0, 1fr); } .seite { order: -1; } }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: clamp(12px, 2vw, 24px); }
+  h1 { margin: 0; font-family: "Source Serif 4", Georgia, serif; font-size: clamp(28px, 4vw, 56px); color: var(--gold); line-height: 1.1; }
+  .unter { color: var(--muted); font-size: clamp(14px, 1.4vw, 20px); }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: clamp(13px, 1.2vw, 17px); color: #ff8a8a; letter-spacing: .1em; }
+  .live::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #ff5b5b; animation: blink 1.4s infinite; }
+  .live.aus { color: var(--muted); }
+  .live.aus::before { background: var(--muted); animation: none; }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0 clamp(4px, .6vw, 8px); font-size: clamp(16px, 1.8vw, 28px); }
+  th { text-align: left; color: var(--muted); font-size: .6em; letter-spacing: .1em; text-transform: uppercase; padding: 0 .8em; }
+  td { background: rgba(255, 255, 255, .06); padding: .45em .8em; }
+  td:first-child { border-radius: .4em 0 0 .4em; width: 3.2em; font-weight: 800; text-align: center; }
+  td:last-child { border-radius: 0 .4em .4em 0; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .zahl { text-align: right; }
+  td.name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; width: 60%; }
+  td.richtig { color: var(--muted); white-space: nowrap; }
+
+  tr.platz1 td { background: linear-gradient(90deg, rgba(217, 180, 90, .45), rgba(217, 180, 90, .15)); color: #fff6dc; font-size: 1.15em; }
+  tr.platz1 td.name::before { content: "👑 "; }
+  tr.platz2 td:first-child { color: var(--silber); }
+  tr.platz3 td:first-child { color: var(--bronze); }
+  tr.neu td { animation: neu 2.5s ease; }
+  @keyframes neu { 0%, 30% { background: rgba(95, 208, 127, .55); } }
+
+  .leer { color: var(--muted); font-size: clamp(16px, 1.8vw, 24px); padding: 2em 0; }
+  .fuss { color: var(--muted); font-size: clamp(12px, 1.1vw, 15px); margin-top: 16px; }
+
+  .seite { background: #fff; color: var(--navy); border-radius: 16px; padding: clamp(14px, 1.6vw, 22px); text-align: center; }
+  .seite img { width: 100%; height: auto; display: block; }
+  .seite b { display: block; font-size: clamp(16px, 1.6vw, 22px); margin-top: 8px; }
+  .seite span { font-size: clamp(12px, 1vw, 14px); color: #5b6478; word-break: break-all; }
+  .seite a { color: inherit; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="rahmen">
+  <main>
+    <header>
+      <div>
+        <h1>Bestenliste</h1>
+        <div class="unter">Be a President · alle abgeschlossenen Amtszeiten</div>
+      </div>
+      <div class="live" id="live">LIVE</div>
+    </header>
+    <div id="liste"><p class="leer">Bestenliste wird geladen…</p></div>
+    <div class="fuss" id="fuss"></div>
+  </main>
+  <aside class="seite">
+    <img src="qr.svg" alt="QR-Code zum Spiel">
+    <b>Jetzt mitspielen!</b>
+    <span><a href="../">kontaktnazura-art.github.io/bethebundespraesident</a></span>
+  </aside>
+</div>
+
+<script src="../config.js?v=4"></script>
+<script>
+  const ANZAHL = 15;
+  const INTERVALL = 5000;
+  const RUNDEN = 6;
+  let bekannteIds = null;
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  }
+
+  async function lade() {
+    const { url, key } = BESTENLISTE_ONLINE;
+    const antwort = await fetch(`${url.replace(/\/$/, "")}/rest/v1/scores?select=id,name,punkte,richtige,zeit&order=punkte.desc,richtige.desc,zeit.asc&limit=${ANZAHL}`, {
+      headers: {
+        apikey: key,
+        Prefer: "count=exact",
+        ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {})
+      }
+    });
+    if (!antwort.ok) throw new Error(antwort.status);
+    const gesamt = (antwort.headers.get("content-range") || "").split("/")[1];
+    return { liste: await antwort.json(), gesamt };
+  }
+
+  async function aktualisiere() {
+    const live = document.getElementById("live");
+    try {
+      const { liste, gesamt } = await lade();
+      const neu = bekannteIds ? new Set(liste.filter(e => !bekannteIds.has(e.id)).map(e => e.id)) : new Set();
+      bekannteIds = new Set([...(bekannteIds || []), ...liste.map(e => e.id)]);
+
+      document.getElementById("liste").innerHTML = liste.length === 0
+        ? `<p class="leer">Noch keine Amtszeit abgeschlossen. Wer wird der erste Präsident?</p>`
+        : `<table>
+            <tr><th>#</th><th>Nickname</th><th>Richtig</th><th class="zahl">Punkte</th></tr>
+            ${liste.map((e, i) => `
+              <tr class="platz${i + 1} ${neu.has(e.id) ? "neu" : ""}">
+                <td>${i + 1}</td>
+                <td class="name">${esc(e.name)}</td>
+                <td class="richtig">${e.richtige} / ${RUNDEN}</td>
+                <td>${e.punkte}</td>
+              </tr>`).join("")}
+          </table>`;
+      document.getElementById("fuss").textContent =
+        `${gesamt ? gesamt + " Amtszeiten insgesamt · " : ""}aktualisiert ${new Date().toLocaleTimeString("de-DE")}`;
+      live.className = "live";
+      live.textContent = "LIVE";
+    } catch (e) {
+      live.className = "live aus";
+      live.textContent = "OFFLINE";
+      if (!bekannteIds) document.getElementById("liste").innerHTML = `<p class="leer">Die Bestenliste ist gerade nicht erreichbar. Neuer Versuch in wenigen Sekunden…</p>`;
+    }
+  }
+
+  if (typeof BESTENLISTE_ONLINE === "undefined" || !BESTENLISTE_ONLINE.url) {
+    document.getElementById("liste").innerHTML = `<p class="leer">Die gemeinsame Bestenliste ist noch nicht eingerichtet (config.js).</p>`;
+  } else {
+    aktualisiere();
+    setInterval(aktualisiere, INTERVALL);
+  }
+</script>
+</body>
+</html>
