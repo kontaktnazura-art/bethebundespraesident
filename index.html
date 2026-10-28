@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Be a President</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1f2d4a;
+    --navy-dark: #141d31;
+    --gold: #d9b45a;
+    --paper: #fffdf7;
+    --ink: #2b2a27;
+    --muted: #6b675e;
+    --green: #2f8f5b;
+    --green-dark: #1f6a42;
+    --red: #c63d3d;
+    --red-dark: #962a2a;
+    --blue: #4f7fc0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #10172a;
+    font-family: "Nunito", system-ui, sans-serif;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  #stage {
+    position: relative;
+    width: min(100vw, calc(100vh * 2752 / 1536));
+    aspect-ratio: 2752 / 1536;
+    overflow: hidden;
+    container-type: inline-size;
+    background: #e9e2d6;
+    user-select: none;
+  }
+  #bg, #intro {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  #intro { opacity: 0; transition: opacity .8s ease; pointer-events: none; }
+  #stage.intro #intro { opacity: 1; }
+
+  /* HUD: deckt die ins Bild gemalte Anzeige ab */
+  .hud {
+    position: absolute; top: 0;
+    height: 7%;
+    background: #f7f8fb;
+    border: 1px solid #c9ced8;
+    border-top: 0;
+    display: flex; align-items: center;
+    gap: 1.2cqw;
+    padding: 0 1.4cqw;
+    font-weight: 800;
+    font-size: 1.7cqw;
+    color: var(--navy);
+    letter-spacing: .04em;
+    z-index: 5;
+  }
+  .hud.left { left: 0; width: 19.5%; border-left: 0; border-bottom-right-radius: 1cqw; }
+  .hud.right { right: 0; width: 29%; border-right: 0; border-bottom-left-radius: 1cqw; justify-content: space-between; }
+  .hud .menu { width: 1.8cqw; height: 1.3cqw; border-top: .3cqw solid #8a93a6; border-bottom: .3cqw solid #8a93a6; position: relative; }
+  .hud .menu::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: .3cqw solid #8a93a6; transform: translateY(-50%); }
+  .bar { flex: 1; height: 2cqw; background: #34405a; border-radius: 1cqw; overflow: hidden; border: .2cqw solid #34405a; }
+  #bar { height: 100%; width: 50%; background: linear-gradient(#5fd07f, #3aa85c); border-radius: 1cqw; transition: width .8s ease; }
+
+  /* Klickbare Gegenstände auf dem Tisch */
+  .hotspot {
+    position: absolute;
+    background: transparent;
+    border: 0;
+    border-radius: 1.2cqw;
+    cursor: pointer;
+    z-index: 4;
+    transition: box-shadow .2s, background .2s;
+  }
+  .hotspot:hover, .hotspot:focus-visible {
+    background: rgba(255, 240, 180, .18);
+    box-shadow: 0 0 0 .35cqw rgba(255, 220, 120, .85), 0 0 2cqw rgba(255, 220, 120, .6);
+    outline: none;
+  }
+  .hotspot .tip {
+    position: absolute; left: 50%; bottom: 100%;
+    transform: translate(-50%, -.6cqw);
+    background: rgba(20, 29, 49, .9); color: #fff;
+    font-size: 1.25cqw; font-weight: 600;
+    padding: .4cqw .9cqw; border-radius: .6cqw;
+    white-space: nowrap;
+    opacity: 0; transition: opacity .2s;
+    pointer-events: none;
+  }
+  .hotspot:hover .tip, .hotspot:focus-visible .tip { opacity: 1; }
+  #hs-gg { left: .5%; top: 69%; width: 20.5%; height: 29%; }
+  #hs-green { left: 68.8%; top: 60%; width: 9%; height: 21%; }
+  #hs-red { left: 77.8%; top: 62%; width: 8.8%; height: 21%; }
+  #stage.intro .hotspot, #stage.busy .hotspot { pointer-events: none; }
+
+  /* Die Mappe, die Merz auf den Tisch legt */
+  #mappe {
+    position: absolute;
+    left: 39%; top: 67%;
+    width: 21.5%; height: 26%;
+    border: 0; padding: 0;
+    cursor: pointer;
+    background: none;
+    z-index: 4;
+    opacity: 0;
+    transform: translateY(-6%) scale(.97);
+    transition: opacity .6s ease, transform .6s ease;
+    pointer-events: none;
+    perspective: 60cqw;
+  }
+  #mappe.da { opacity: 1; transform: none; pointer-events: auto; }
+  #mappe .deckel {
+    position: absolute; inset: 0;
+    background: linear-gradient(170deg, #6a96d4, #4673b3 60%, #3d65a0);
+    border-radius: .8cqw;
+    border: .25cqw solid #2c4b7c;
+    box-shadow: 0 1.2cqw 0 -.2cqw #e8e4da, 0 1.5cqw 0 -.2cqw #2c4b7c, 0 2cqw 2.5cqw rgba(60, 30, 10, .45);
+    transform: rotateX(28deg);
+    transform-origin: 50% 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .6cqw;
+  }
+  #mappe .schild {
+    background: #fff; color: var(--navy);
+    font-weight: 800; letter-spacing: .08em;
+    font-size: 1.35cqw;
+    padding: .45cqw 1.2cqw;
+    border-radius: .3cqw;
+    box-shadow: inset 0 0 0 .15cqw #c9d3e3;
+  }
+  #mappe .kurz {
+    color: #eaf1ff; font-weight: 600; font-size: 1.15cqw;
+    max-width: 90%; text-align: center; line-height: 1.2;
+  }
+  #mappe:hover .deckel, #mappe:focus-visible .deckel { filter: brightness(1.08); outline: none; }
+  #mappe.puls .deckel { animation: puls 1.6s ease-in-out infinite; }
+  @keyframes puls {
+    0%, 100% { box-shadow: 0 1.2cqw 0 -.2cqw #e8e4da, 0 1.5cqw 0 -.2cqw #2c4b7c, 0 2cqw 2.5cqw rgba(60, 30, 10, .45), 0 0 0 0 rgba(255, 220, 120, .0); }
+    50% { box-shadow: 0 1.2cqw 0 -.2cqw #e8e4da, 0 1.5cqw 0 -.2cqw #2c4b7c, 0 2cqw 2.5cqw rgba(60, 30, 10, .45), 0 0 0 .5cqw rgba(255, 220, 120, .9); }
+  }
+  #mappe .abdruck {
+    position: absolute; left: 50%; top: 45%;
+    transform: translate(-50%, -50%) rotate(-12deg) scale(2.2);
+    font-weight: 800; letter-spacing: .06em;
+    font-size: 1.9cqw;
+    padding: .4cqw 1.2cqw;
+    border: .35cqw solid currentColor;
+    border-radius: .5cqw;
+    background: rgba(255, 255, 255, .55);
+    opacity: 0;
+    pointer-events: none;
+  }
+  #mappe .abdruck.zeigen { animation: stempel .28s cubic-bezier(.3, 1.6, .5, 1) forwards; }
+  @keyframes stempel {
+    to { opacity: .95; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+  }
+
+  #caption {
+    position: absolute; left: 50%; bottom: 4%;
+    transform: translateX(-50%);
+    background: rgba(20, 29, 49, .82); color: #fff;
+    font-size: 1.6cqw; font-weight: 600;
+    padding: .7cqw 1.8cqw; border-radius: 3cqw;
+    z-index: 6; opacity: 0; transition: opacity .4s;
+    pointer-events: none; white-space: nowrap;
+  }
+  #caption.zeigen { opacity: 1; }
+  #skip {
+    position: absolute; right: 2%; bottom: 4%;
+    z-index: 7;
+    font: inherit; font-size: 1.3cqw; font-weight: 700;
+    background: rgba(255, 255, 255, .9); color: var(--navy);
+    border: 0; border-radius: 3cqw;
+    padding: .6cqw 1.5cqw; cursor: pointer;
+    display: none;
+  }
+  #stage.intro #skip { display: block; }
+
+  /* Fenster (Akte, Grundgesetz, Ergebnis, Start, Ende) */
+  #overlay {
+    position: absolute; inset: 0;
+    z-index: 10;
+    background: rgba(16, 23, 42, .55);
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 3cqw;
+  }
+  #overlay.offen { display: flex; animation: einblenden .25s ease; }
+  @keyframes einblenden { from { opacity: 0; } }
+  .panel {
+    width: min(62cqw, 100%);
+    max-height: 100%;
+    overflow: auto;
+    border-radius: 1.2cqw;
+    padding: 2.4cqw 3cqw;
+    font-size: clamp(13px, 1.55cqw, 22px);
+    line-height: 1.5;
+    box-shadow: 0 2cqw 5cqw rgba(0, 0, 0, .35);
+    animation: hoch .3s ease;
+  }
+  @keyframes hoch { from { transform: translateY(2cqw); opacity: 0; } }
+  .panel h1, .panel h2 { margin: 0 0 .5em; line-height: 1.2; }
+  .panel h1 { font-size: 1.9em; }
+  .panel h2 { font-size: 1.45em; }
+  .panel p { margin: 0 0 .8em; }
+  .panel .klein { font-size: .82em; color: var(--muted); }
+  .knoepfe { display: flex; flex-wrap: wrap; gap: .7em; margin-top: 1.1em; }
+  .knopf {
+    font: inherit; font-weight: 700;
+    border: 0; border-radius: .6em;
+    padding: .55em 1.1em;
+    cursor: pointer;
+    background: #e7e3d9; color: var(--ink);
+  }
+  .knopf:hover { filter: brightness(.95); }
+  .knopf.haupt { background: var(--navy); color: #fff; }
+  .knopf.gruen { background: var(--green); color: #fff; }
+  .knopf.rot { background: var(--red); color: #fff; }
+
+  .papier { background: var(--paper); font-family: "Source Serif 4", Georgia, serif; }
+  .papier .kopf {
+    font-family: "Nunito", sans-serif;
+    font-size: .8em; color: #185fa5; font-weight: 700;
+    border-bottom: 1px solid #dfe6ef; padding-bottom: .5em; margin-bottom: 1em;
+    letter-spacing: .02em;
+  }
+  .papier .art { font-family: "Nunito", sans-serif; font-weight: 800; color: var(--muted); font-size: .8em; letter-spacing: .08em; text-transform: uppercase; margin-bottom: .2em; }
+  .papier .notiz {
+    background: #fff4b8; color: #5a4300;
+    padding: .8em 1em; border-radius: .3em;
+    font-style: italic;
+    transform: rotate(-.6deg);
+    box-shadow: 0 .3em .6em rgba(0, 0, 0, .08);
+  }
+  .papier .knoepfe { font-family: "Nunito", sans-serif; }
+
+  .buch {
+    background: var(--navy);
+    color: #eef1f7;
+    border: .5cqw solid var(--navy-dark);
+    box-shadow: inset 0 0 0 .2cqw var(--gold), 0 2cqw 5cqw rgba(0, 0, 0, .35);
+  }
+  .buch h2 { color: var(--gold); font-family: "Source Serif 4", Georgia, serif; }
+  .buch ol { padding-left: 1.3em; margin: 0; }
+  .buch li { margin-bottom: .6em; }
+  .buch .klein { color: #b9c2d6; }
+
+  .ergebnis { background: #fff; }
+  .ergebnis .marke {
+    display: inline-block;
+    font-weight: 800; font-size: .85em; letter-spacing: .06em; text-transform: uppercase;
+    padding: .25em .7em; border-radius: .4em; margin-bottom: .6em;
+  }
+  .ergebnis.richtig .marke { background: #e3f4ea; color: var(--green-dark); }
+  .ergebnis.falsch .marke { background: #fbe5e5; color: var(--red-dark); }
+  .ergebnis.richtig h2 { color: var(--green-dark); }
+  .ergebnis.falsch h2 { color: var(--red-dark); }
+  .ergebnis ul { padding-left: 1.2em; margin: .3em 0 0; }
+  .ergebnis li { margin-bottom: .35em; }
+  .ergebnis .loesung { background: #f3f0e8; border-radius: .5em; padding: .8em 1em; margin-bottom: .8em; }
+
+  .start { background: var(--paper); text-align: center; }
+  .start h1 { color: var(--navy); }
+  .start .regeln { text-align: left; display: inline-block; margin: .3em 0 .6em; padding-left: 1.2em; }
+  .start .regeln li { margin-bottom: .3em; }
+  .start .knoepfe { justify-content: center; }
+
+  .ende { background: var(--paper); }
+  .ende .punkte { font-size: 3em; font-weight: 800; color: var(--navy); line-height: 1; margin: .1em 0 .2em; }
+  .ende table { width: 100%; border-collapse: collapse; font-size: .9em; }
+  .ende td { padding: .4em .3em; border-bottom: 1px solid #e7e2d6; vertical-align: top; }
+  .ende .ok { color: var(--green-dark); font-weight: 800; }
+  .ende .nok { color: var(--red-dark); font-weight: 800; }
+
+  #quer { display: none; position: fixed; left: 0; right: 0; bottom: 6vh; text-align: center; color: #c9d3e6; font-size: 15px; padding: 0 16px; }
+  @media (orientation: portrait) and (max-width: 700px) {
+    #quer { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="stage" class="busy">
+  <img id="bg" src="assets/buero.jpg" alt="Amtszimmer des Bundespräsidenten mit Schreibtisch">
+  <video id="intro" src="assets/intro.mp4" muted playsinline preload="auto" poster="assets/buero.jpg"></video>
+
+  <div class="hud left"><span class="menu" aria-hidden="true"></span><span>AKTE <span id="akteNr">1</span> / <span id="akteGesamt">6</span></span></div>
+  <div class="hud right"><span>VERTRAUEN</span><div class="bar" role="progressbar" aria-label="Vertrauen" aria-valuemin="0" aria-valuemax="100"><div id="bar"></div></div></div>
+
+  <button id="hs-gg" class="hotspot" aria-label="Grundgesetz aufschlagen"><span class="tip">Grundgesetz: Prüfhinweise</span></button>
+  <button id="hs-green" class="hotspot" aria-label="Ausfertigen: Gesetz unterschreiben"><span class="tip">Ausfertigen</span></button>
+  <button id="hs-red" class="hotspot" aria-label="Ablehnen: Ausfertigung verweigern"><span class="tip">Ablehnen</span></button>
+
+  <button id="mappe" aria-label="Gesetzentwurf öffnen">
+    <span class="deckel"><span class="schild">GESETZENTWURF</span><span class="kurz" id="mappeKurz"></span></span>
+    <span class="abdruck" id="abdruck"></span>
+  </button>
+
+  <div id="caption"></div>
+  <button id="skip">Überspringen ›</button>
+
+  <div id="overlay" role="dialog" aria-modal="true"></div>
+</div>
+
+<p id="quer">Tipp: Handy quer halten, dann wird das Spiel größer.</p>
+
+<script src="faelle.js"></script>
+<script>
+  const RUNDEN = 6;
+
+  const stage = document.getElementById("stage");
+  const video = document.getElementById("intro");
+  const overlay = document.getElementById("overlay");
+  const mappe = document.getElementById("mappe");
+  const abdruck = document.getElementById("abdruck");
+  const caption = document.getElementById("caption");
+
+  let runde = [];
+  let nr = 0;
+  let punkte = 0;
+  let protokoll = [];
+  let entschieden = false;
+
+  function mischen(liste) {
+    const a = liste.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Zufällige Auswahl, aber nie nur Ablehnen- oder nur Unterschreiben-Fälle
+  function fallauswahl() {
+    for (;;) {
+      const auswahl = mischen(FAELLE).slice(0, RUNDEN);
+      const ja = auswahl.filter(f => f.loesung !== "ablehnen").length;
+      const nein = auswahl.filter(f => f.loesung !== "unterschreiben").length;
+      if (ja >= 2 && nein >= 2) return auswahl;
+    }
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  }
+
+  function zeigePanel(html) {
+    overlay.innerHTML = html;
+    overlay.classList.add("offen");
+    const erster = overlay.querySelector("button");
+    if (erster) erster.focus({ preventScroll: true });
+  }
+  function schliessePanel() {
+    overlay.classList.remove("offen");
+    overlay.innerHTML = "";
+  }
+  overlay.addEventListener("click", e => {
+    const aktion = e.target.closest("[data-aktion]")?.dataset.aktion;
+    if (aktion) aktionen[aktion]();
+    else if (e.target === overlay && overlay.dataset.schliessbar === "ja") schliessePanel();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && overlay.dataset.schliessbar === "ja") schliessePanel();
+  });
+
+  function fall() { return runde[nr]; }
+
+  function aktualisiereHud() {
+    document.getElementById("akteNr").textContent = Math.min(nr + 1, RUNDEN);
+    document.getElementById("akteGesamt").textContent = RUNDEN;
+    const anteil = nr === 0 && protokoll.length === 0 ? 50 : Math.round(punkte / protokoll.length * 100);
+    document.getElementById("bar").style.width = Math.max(4, anteil) + "%";
+    document.querySelector(".bar").setAttribute("aria-valuenow", anteil);
+  }
+
+  // ---------- Ablauf ----------
+
+  function startbildschirm() {
+    overlay.dataset.schliessbar = "nein";
+    zeigePanel(`
+      <div class="panel start">
+        <h1>Be a President</h1>
+        <p>Du bist Bundespräsident. Das Kabinett legt dir Gesetze vor. Bevor ein Gesetz gilt, musst du es <b>ausfertigen</b>, also unterschreiben (Art. 82 GG). Vorher prüfst du: Ist es richtig zustande gekommen? Verstößt es offensichtlich gegen das Grundgesetz?</p>
+        <ul class="regeln">
+          <li>Klick auf die <b>blaue Mappe</b>: Worum geht es?</li>
+          <li>Klick auf das <b>Grundgesetz</b>: Prüfhinweise.</li>
+          <li><b>Grüner Stempel</b>: ausfertigen. <b>Roter Stempel</b>: ablehnen.</li>
+        </ul>
+        <p class="klein">${RUNDEN} Akten pro Amtszeit, zufällig ausgewählt. Dein Nachbar bekommt andere.</p>
+        <div class="knoepfe"><button class="knopf haupt" data-aktion="los">Amtszeit beginnen</button></div>
+      </div>`);
+  }
+
+  function neueAmtszeit() {
+    runde = fallauswahl();
+    nr = 0; punkte = 0; protokoll = [];
+    aktualisiereHud();
+    schliessePanel();
+    naechsteAkte();
+  }
+
+  function naechsteAkte() {
+    entschieden = false;
+    aktualisiereHud();
+    mappe.classList.remove("da", "puls");
+    abdruck.className = "abdruck";
+    abdruck.textContent = "";
+    document.getElementById("mappeKurz").textContent = fall().kurztitel;
+
+    stage.classList.add("intro", "busy");
+    caption.textContent = `Das Kabinett bringt Akte ${nr + 1} von ${RUNDEN}`;
+    caption.classList.add("zeigen");
+    video.currentTime = 0;
+    const p = video.play();
+    if (p && p.catch) p.catch(() => zeigeSchreibtisch());
+  }
+
+  let schreibtischTimer = null;
+  function zeigeSchreibtisch() {
+    if (!stage.classList.contains("intro")) return;
+    stage.classList.remove("intro");
+    caption.classList.remove("zeigen");
+    clearTimeout(schreibtischTimer);
+    schreibtischTimer = setTimeout(() => {
+      video.pause();
+      mappe.classList.add("da");
+      if (nr === 0) mappe.classList.add("puls");
+      stage.classList.remove("busy");
+    }, 450);
+  }
+  video.addEventListener("ended", zeigeSchreibtisch);
+  video.addEventListener("error", zeigeSchreibtisch);
+  document.getElementById("skip").addEventListener("click", zeigeSchreibtisch);
+
+  function oeffneAkte() {
+    if (entschieden) return;
+    mappe.classList.remove("puls");
+    const f = fall();
+    overlay.dataset.schliessbar = "ja";
+    zeigePanel(`
+      <div class="panel papier">
+        <div class="kopf">Deutscher Bundestag · Drucksache ${esc(f.drucksache)} · Akte ${nr + 1} von ${RUNDEN}</div>
+        <div class="art">Gesetzentwurf</div>
+        <h2>${esc(f.titel)}</h2>
+        <p><b>Worum geht es?</b> ${esc(f.worum)}</p>
+        <p class="notiz">${esc(f.umstaende)}</p>
+        <div class="knoepfe">
+          <button class="knopf gruen" data-aktion="ja">Ausfertigen</button>
+          <button class="knopf rot" data-aktion="nein">Ablehnen</button>
+          <button class="knopf" data-aktion="gg">Grundgesetz aufschlagen</button>
+          <button class="knopf" data-aktion="zu">Schließen</button>
+        </div>
+      </div>`);
+  }
+
+  function oeffneGrundgesetz() {
+    if (entschieden) return;
+    const f = fall();
+    overlay.dataset.schliessbar = "ja";
+    zeigePanel(`
+      <div class="panel buch">
+        <h2>Grundgesetz</h2>
+        <p class="klein">Prüfhinweise zur Akte „${esc(f.kurztitel)}“</p>
+        <ol>${f.hinweise.map(h => `<li>${esc(h)}</li>`).join("")}</ol>
+        <div class="knoepfe">
+          <button class="knopf" data-aktion="akte">Zur Akte</button>
+          <button class="knopf" data-aktion="zu">Zuklappen</button>
+        </div>
+      </div>`);
+  }
+
+  function entscheiden(wahl) {
+    if (entschieden || stage.classList.contains("busy")) return;
+    entschieden = true;
+    schliessePanel();
+    stage.classList.add("busy");
+    mappe.classList.remove("puls");
+
+    const f = fall();
+    const richtig = f.loesung === "beides" || f.loesung === wahl;
+    if (richtig) punkte++;
+    protokoll.push({ fall: f, wahl, richtig });
+
+    abdruck.textContent = wahl === "unterschreiben" ? "AUSGEFERTIGT" : "ABGELEHNT";
+    abdruck.style.color = wahl === "unterschreiben" ? "var(--green)" : "var(--red)";
+    void abdruck.offsetWidth;
+    abdruck.classList.add("zeigen");
+    stempelGeraeusch();
+
+    setTimeout(() => zeigeErgebnis(f, wahl, richtig), 1000);
+  }
+
+  function zeigeErgebnis(f, wahl, richtig) {
+    aktualisiereHud();
+    const loesungText = {
+      unterschreiben: "Richtig wäre: ausfertigen.",
+      ablehnen: "Richtig wäre: ablehnen.",
+      beides: "Beide Entscheidungen sind vertretbar."
+    }[f.loesung];
+    const artText = f.art === "formal" ? " Das Gesetz scheitert schon am Verfahren."
+      : f.art === "inhaltlich" ? " Das Gesetz scheitert am Inhalt." : "";
+    const letzte = nr + 1 >= RUNDEN;
+    overlay.dataset.schliessbar = "nein";
+    zeigePanel(`
+      <div class="panel ergebnis ${richtig ? "richtig" : "falsch"}">
+        <span class="marke">Du hast ${wahl === "unterschreiben" ? "ausgefertigt" : "abgelehnt"}</span>
+        <h2>${richtig ? "Richtig entschieden!" : "Leider falsch."}</h2>
+        <div class="loesung"><b>${loesungText}</b>${artText}<br>${esc(f.begruendung)}</div>
+        <b>Die Prüfhinweise:</b>
+        <ul>${f.hinweise.map(h => `<li>${esc(h)}</li>`).join("")}</ul>
+        <div class="knoepfe"><button class="knopf haupt" data-aktion="weiter">${letzte ? "Zur Bilanz" : "Nächste Akte"}</button></div>
+      </div>`);
+  }
+
+  function weiter() {
+    schliessePanel();
+    nr++;
+    if (nr >= RUNDEN) bilanz();
+    else naechsteAkte();
+  }
+
+  function bilanz() {
+    mappe.classList.remove("da");
+    stage.classList.add("busy");
+    const titel =
+      punkte === RUNDEN ? "Hüter der Verfassung" :
+      punkte >= RUNDEN - 2 ? "Solider Staatsnotar" :
+      punkte >= RUNDEN / 2 ? "Karlsruhe hat noch Arbeit" :
+      "Bitte das Grundgesetz lesen";
+    overlay.dataset.schliessbar = "nein";
+    zeigePanel(`
+      <div class="panel ende">
+        <h2>Deine Amtszeit ist vorbei</h2>
+        <div class="punkte">${punkte} / ${RUNDEN}</div>
+        <p><b>${titel}</b></p>
+        <table>
+          ${protokoll.map(p => `
+            <tr>
+              <td class="${p.richtig ? "ok" : "nok"}">${p.richtig ? "✓" : "✗"}</td>
+              <td>${esc(p.fall.kurztitel)}</td>
+              <td>${p.wahl === "unterschreiben" ? "ausgefertigt" : "abgelehnt"}</td>
+            </tr>`).join("")}
+        </table>
+        <div class="knoepfe"><button class="knopf haupt" data-aktion="los">Neue Amtszeit</button></div>
+      </div>`);
+  }
+
+  function stempelGeraeusch() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const dauer = 0.18;
+      const puffer = ctx.createBuffer(1, ctx.sampleRate * dauer, ctx.sampleRate);
+      const daten = puffer.getChannelData(0);
+      for (let i = 0; i < daten.length; i++) daten[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / daten.length, 4);
+      const quelle = ctx.createBufferSource();
+      quelle.buffer = puffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass"; filter.frequency.value = 700;
+      quelle.connect(filter).connect(ctx.destination);
+      quelle.start();
+      quelle.onended = () => ctx.close();
+    } catch (e) { /* ohne Ton weiterspielen */ }
+  }
+
+  const aktionen = {
+    los: neueAmtszeit,
+    ja: () => entscheiden("unterschreiben"),
+    nein: () => entscheiden("ablehnen"),
+    gg: oeffneGrundgesetz,
+    akte: oeffneAkte,
+    zu: schliessePanel,
+    weiter
+  };
+
+  mappe.addEventListener("click", oeffneAkte);
+  document.getElementById("hs-gg").addEventListener("click", oeffneGrundgesetz);
+  document.getElementById("hs-green").addEventListener("click", () => entscheiden("unterschreiben"));
+  document.getElementById("hs-red").addEventListener("click", () => entscheiden("ablehnen"));
+
+  aktualisiereHud();
+  startbildschirm();
+</script>
+</body>
+</html>
