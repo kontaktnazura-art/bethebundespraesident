@@ -333,6 +333,7 @@
 
 <p id="quer">Tipp: Handy quer halten, dann wird das Spiel größer.</p>
 
+<script src="config.js"></script>
 <script src="faelle.js"></script>
 <script>
   const RUNDEN = 6;
@@ -438,17 +439,17 @@
     zeigePanel(`
       <div class="panel start">
         <h1>Be a President</h1>
+        <div class="namensfeld">
+          <label for="nameEingabe">Dein Nickname für die Bestenliste</label>
+          <input id="nameEingabe" type="text" maxlength="20" autocomplete="off" placeholder="z. B. Frank-Walter" value="${esc(spielerName)}">
+          <div class="fehler" id="nameFehler">${esc(fehler)}</div>
+        </div>
         <p>Du bist Bundespräsident. Merkel, Scholz und Merz legen dir echte Gesetze vor. Bevor ein Gesetz gilt, musst du es <b>ausfertigen</b>, also unterschreiben (Art. 82 GG). Vorher prüfst du: Ist es richtig zustande gekommen? Verstößt es offensichtlich gegen das Grundgesetz?</p>
         <ul class="regeln">
           <li>Klick auf die <b>blaue Mappe</b>: Worum geht es?</li>
           <li>Klick auf das <b>Grundgesetz</b>: Prüfhinweise.</li>
           <li><b>Grüner Stempel</b>: ausfertigen. <b>Roter Stempel</b>: ablehnen.</li>
         </ul>
-        <div class="namensfeld">
-          <label for="nameEingabe">Dein Name</label>
-          <input id="nameEingabe" type="text" maxlength="20" autocomplete="off" placeholder="Frank-Walter" value="${esc(spielerName)}">
-          <div class="fehler" id="nameFehler">${esc(fehler)}</div>
-        </div>
         <p class="klein">${RUNDEN} zufällige Akten. Richtig: ${PUNKTE_RICHTIG} Punkte, dazu bis zu ${TEMPO_BONUS} Bonuspunkte für schnelle Entscheidungen.</p>
         <div class="knoepfe"><button class="knopf haupt" data-aktion="los">Amtszeit beginnen</button></div>
       </div>`);
@@ -461,7 +462,7 @@
     if (eingabe) {
       const name = eingabe.value.trim().replace(/\s+/g, " ");
       if (!name) {
-        document.getElementById("nameFehler").textContent = "Gib zuerst deinen Namen ein.";
+        document.getElementById("nameFehler").textContent = "Gib zuerst einen Nickname ein.";
         eingabe.focus();
         return;
       }
@@ -615,11 +616,6 @@
 
     const zeit = Math.round(protokoll.reduce((s, p) => s + p.sekunden, 0));
     const eintrag = { name: spielerName, punkte, richtige, zeit, datum: Date.now() };
-    // Nur die eigenen Amtszeiten unter diesem Namen, nicht die anderer Spieler
-    const schluessel = spielerName.toLowerCase();
-    const eigene = speichereErgebnis(eintrag).filter(e => e.name.toLowerCase() === schluessel);
-    const platz = eigene.findIndex(e => e.datum === eintrag.datum) + 1;
-    const rekord = platz === 1 && eigene.length > 1;
 
     const titel =
       richtige === RUNDEN ? "Hüter der Verfassung" :
@@ -627,9 +623,6 @@
       richtige >= RUNDEN / 2 ? "Karlsruhe hat noch Arbeit" :
       "Bitte das Grundgesetz lesen";
 
-    const top = eigene.slice(0, 5);
-    const duInTop = platz >= 1 && platz <= 5;
-    const datum = ms => new Date(ms).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
     overlay.dataset.schliessbar = "nein";
     zeigePanel(`
       <div class="panel ende">
@@ -651,19 +644,8 @@
             </table>
           </div>
           <div>
-            <h3>${rekord ? "Neuer Rekord!" : "Deine besten Amtszeiten"}</h3>
-            <table>
-              <tr><th>#</th><th>Datum</th><th>Richtig</th><th class="zahl">Punkte</th></tr>
-              ${top.map((e, i) => `
-                <tr class="${i + 1 === platz ? "du" : ""}">
-                  <td>${i + 1}</td>
-                  <td>${datum(e.datum)}</td>
-                  <td>${e.richtige} / ${RUNDEN}</td>
-                  <td class="zahl">${e.punkte}</td>
-                </tr>`).join("")}
-              ${!duInTop && platz > 0 ? `<tr class="du"><td>${platz}</td><td>${datum(eintrag.datum)}</td><td>${richtige} / ${RUNDEN}</td><td class="zahl">${punkte}</td></tr>` : ""}
-            </table>
-            <p class="klein">Nur deine Ergebnisse unter dem Namen „${esc(spielerName)}“, gespeichert auf diesem Gerät.</p>
+            <h3>Bestenliste</h3>
+            <div id="bestenliste"><p class="klein">Bestenliste wird geladen…</p></div>
           </div>
         </div>
         <div class="knoepfe">
@@ -671,6 +653,72 @@
           <button class="knopf" data-aktion="anderer">Anderer Spieler</button>
         </div>
       </div>`);
+
+    zeigeBestenliste(eintrag);
+  }
+
+  // ---------- Bestenliste ----------
+
+  const online = typeof BESTENLISTE_ONLINE !== "undefined" && BESTENLISTE_ONLINE.url && BESTENLISTE_ONLINE.key;
+
+  async function supabase(pfad, optionen = {}) {
+    const antwort = await fetch(`${BESTENLISTE_ONLINE.url.replace(/\/$/, "")}/rest/v1/${pfad}`, {
+      ...optionen,
+      headers: {
+        apikey: BESTENLISTE_ONLINE.key,
+        Authorization: `Bearer ${BESTENLISTE_ONLINE.key}`,
+        "Content-Type": "application/json",
+        ...(optionen.headers || {})
+      }
+    });
+    if (!antwort.ok) throw new Error(`Bestenliste: ${antwort.status}`);
+    return antwort.json();
+  }
+
+  async function zeigeBestenliste(eintrag) {
+    const ziel = document.getElementById("bestenliste");
+    let liste, eigeneId, hinweis;
+
+    if (online) {
+      try {
+        const [neu] = await supabase("scores", {
+          method: "POST",
+          headers: { Prefer: "return=representation" },
+          body: JSON.stringify({ name: eintrag.name, punkte: eintrag.punkte, richtige: eintrag.richtige, zeit: eintrag.zeit })
+        });
+        eigeneId = neu.id;
+        liste = await supabase("scores?select=id,name,punkte,richtige,zeit&order=punkte.desc,richtige.desc,zeit.asc&limit=100");
+        hinweis = "Alle Spieler, jede abgeschlossene Amtszeit.";
+      } catch (e) {
+        liste = null;
+      }
+    }
+    if (!liste) {
+      // Ohne Online-Speicher: alle Amtszeiten auf diesem Gerät
+      liste = speichereErgebnis(eintrag).map(e => ({ ...e, id: e.datum }));
+      eigeneId = eintrag.datum;
+      hinweis = online
+        ? "Die Online-Bestenliste ist gerade nicht erreichbar. Gezeigt werden die Ergebnisse auf diesem Gerät."
+        : "Gespeichert auf diesem Gerät.";
+    }
+
+    const platz = liste.findIndex(e => e.id === eigeneId) + 1;
+    const top = liste.slice(0, 10);
+    const duInTop = platz >= 1 && platz <= 10;
+    if (!document.body.contains(ziel)) return;
+    ziel.innerHTML = `
+      <table>
+        <tr><th>#</th><th>Nickname</th><th>Richtig</th><th class="zahl">Punkte</th></tr>
+        ${top.map((e, i) => `
+          <tr class="${e.id === eigeneId ? "du" : ""}">
+            <td>${i + 1}</td>
+            <td>${esc(e.name)}</td>
+            <td>${e.richtige} / ${RUNDEN}</td>
+            <td class="zahl">${e.punkte}</td>
+          </tr>`).join("")}
+        ${!duInTop ? `<tr class="du"><td>${platz > 0 ? platz : "100+"}</td><td>${esc(eintrag.name)}</td><td>${eintrag.richtige} / ${RUNDEN}</td><td class="zahl">${eintrag.punkte}</td></tr>` : ""}
+      </table>
+      <p class="klein">${hinweis}</p>`;
   }
 
   function stempelGeraeusch() {
