@@ -159,6 +159,35 @@
   #stage.intro .hotspot, #stage.busy .hotspot { pointer-events: none; }
   .hotspot.puls { animation: puls 1.6s ease-in-out infinite; }
 
+  /* Einführung: Sprechblase, die durch die erste Akte führt */
+  .tipp {
+    position: absolute; z-index: 9;
+    width: 27%;
+    background: #fffdf7; color: var(--ink);
+    border: .3cqw solid var(--gold); border-radius: 1cqw;
+    padding: 1cqw 1.3cqw;
+    font-size: 1.4cqw; line-height: 1.4;
+    box-shadow: 0 1cqw 2.5cqw rgba(0, 0, 0, .35);
+    opacity: 0; pointer-events: none; transform: translateY(1cqw);
+    transition: opacity .3s, transform .3s, left .4s, top .4s;
+  }
+  .tipp.zeigen { opacity: 1; pointer-events: auto; transform: none; }
+  .tipp.wackeln { animation: wackeln .4s; }
+  @keyframes wackeln { 25% { transform: translateX(-.6cqw); } 75% { transform: translateX(.6cqw); } }
+  .tipp p { margin: 0 0 .5em; }
+  .tippschritt { font-size: .7em; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #9a7412; margin-bottom: .2em; }
+  .tipp button { font: inherit; font-size: .7em; background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; }
+  .tipp::after {
+    content: ""; position: absolute; width: 1.6cqw; height: 1.6cqw;
+    background: #fffdf7; border: .3cqw solid var(--gold); border-top: 0; border-left: 0;
+  }
+  .tipp.pfeil-unten::after { left: 46%; bottom: -1.1cqw; transform: rotate(45deg); }
+  .tipp.pfeil-links::after { left: -1.1cqw; top: 40%; transform: rotate(135deg); }
+  #stage.einfuehrung .stempelhinweis { display: none; }
+  .einfuehrungswahl { display: inline-flex; align-items: center; gap: .5em; font-weight: 600; margin: .2em 0 .6em; cursor: pointer; }
+  .einfuehrungswahl input { width: 1.1em; height: 1.1em; accent-color: var(--navy); }
+  #stage.einfuehrung .buchzu.puls { animation: puls 1.6s ease-in-out infinite; }
+
   /* Aufgeschlagenes Buch (Akte oder Grundgesetz) links auf dem Tisch */
   #buchHintergrund {
     position: absolute; inset: 0; z-index: 6;
@@ -432,6 +461,12 @@
     <button class="buchzu" id="buchZu" aria-label="Buch schließen">✕</button>
   </div>
 
+  <div id="tipp" class="tipp" role="status" aria-live="polite">
+    <div class="tippschritt" id="tippSchritt"></div>
+    <p id="tippText"></p>
+    <button id="tippSkip">Einführung überspringen</button>
+  </div>
+
   <div id="caption"></div>
   <button id="skip">Überspringen ›</button>
 
@@ -568,6 +603,7 @@
           <li>Entscheide mit den Stempeln auf dem Tisch: <b>grün</b> = ausfertigen, <b>rot</b> = ablehnen.</li>
           <li>Falsche Entscheidungen kosten <b>Vertrauen</b>. Fällt es auf 0, musst du zurücktreten.</li>
         </ul>
+        <label class="einfuehrungswahl"><input type="checkbox" id="einfuehrungAn" ${einfuehrungGesehen() ? "" : "checked"}> Kurze Einführung bei der ersten Akte</label>
         <p class="klein">${RUNDEN} zufällige Akten. Richtig: ${PUNKTE_RICHTIG} Punkte, dazu bis zu ${TEMPO_BONUS} Bonuspunkte für schnelle Entscheidungen.</p>
         <div class="knoepfe"><button class="knopf haupt" data-aktion="los">Amtszeit beginnen</button></div>
       </div>`);
@@ -586,6 +622,8 @@
       }
       spielerName = name;
     }
+    const einfuehrungsHaken = document.getElementById("einfuehrungAn");
+    einfuehrungGewuenscht = !!(einfuehrungsHaken && einfuehrungsHaken.checked);
     runde = fallauswahl();
     nr = 0; richtige = 0; punkte = 0; protokoll = []; vertrauen = tiefstesVertrauen = VERTRAUEN_START;
     stage.classList.remove("verloren");
@@ -632,8 +670,83 @@
       if (nr === 0) mappe.classList.add("puls");
       stage.classList.remove("busy");
       aktenStart = performance.now();
+      if (nr === 0 && einfuehrungGewuenscht) starteEinfuehrung();
     }, 600);
   }
+
+  // ---------- Einführung bei der ersten Akte ----------
+  // Führt Schritt für Schritt durch: Akte lesen, Grundgesetz prüfen, stempeln.
+  // Andere Gegenstände reagieren erst, wenn der aktuelle Schritt erledigt ist.
+
+  const EINFUEHRUNG_KEY = "be-a-president-einfuehrung";
+  let einfuehrungGewuenscht = false;
+  let einfuehrung = null;   // null | "mappe" | "akteLesen" | "gg" | "ggLesen" | "stempel"
+  const tipp = document.getElementById("tipp");
+
+  function einfuehrungGesehen() {
+    try { return localStorage.getItem(EINFUEHRUNG_KEY) === "ja"; } catch (e) { return false; }
+  }
+
+  const SCHRITTE = {
+    mappe: { nr: 1, text: "Die Bundesregierung hat dir einen <b>Gesetzentwurf</b> auf den Tisch gelegt. Klick auf die blaue Mappe und lies ihn aufmerksam durch.", pos: [37, 34], pfeil: "unten", puls: () => [mappe] },
+    akteLesen: { nr: 1, text: "Worum geht es? Achte auch auf den gelben Zettel. Wenn du fertig bist, schließ die Akte mit dem <b>✕</b>.", pos: [68, 14], pfeil: "links", puls: () => [document.getElementById("buchZu")] },
+    gg: { nr: 2, text: "Jetzt prüfst du das Gesetz. Schlag das <b>Grundgesetz</b> auf.", pos: [2, 36], pfeil: "unten", puls: () => [document.getElementById("hs-gg")] },
+    ggLesen: { nr: 2, text: "Hier stehen die Prüfhinweise. Passt der Entwurf dazu? Wenn du alles weißt, schließ das Grundgesetz mit dem <b>✕</b>.", pos: [68, 14], pfeil: "links", puls: () => [document.getElementById("buchZu")] },
+    stempel: { nr: 3, text: "Jetzt entscheidest du: <b>grüner Stempel</b> = ausfertigen, <b>roter Stempel</b> = ablehnen. Du kannst Akte und Grundgesetz vorher noch einmal aufschlagen.", pos: [57, 25], pfeil: "unten", puls: () => [document.getElementById("hs-green"), document.getElementById("hs-red")] }
+  };
+
+  function einfuehrungSchritt(name) {
+    document.querySelectorAll("#stage .puls").forEach(el => el.classList.remove("puls"));
+    einfuehrung = name;
+    const s = SCHRITTE[name];
+    document.getElementById("tippSchritt").textContent = `Einführung · Schritt ${s.nr} von 3`;
+    document.getElementById("tippText").innerHTML = s.text;
+    tipp.style.left = s.pos[0] + "%";
+    tipp.style.top = s.pos[1] + "%";
+    tipp.className = "tipp zeigen pfeil-" + s.pfeil;
+    s.puls().forEach(el => el.classList.add("puls"));
+    // Der Tempo-Bonus zählt erst ab der Entscheidung, nicht während der Einführung
+    if (name === "stempel") aktenStart = performance.now();
+  }
+
+  function starteEinfuehrung() {
+    stage.classList.add("einfuehrung");
+    einfuehrungSchritt("mappe");
+  }
+
+  function beendeEinfuehrung() {
+    if (!einfuehrung) return;
+    einfuehrung = null;
+    einfuehrungGewuenscht = false;
+    stage.classList.remove("einfuehrung");
+    tipp.className = "tipp";
+    document.querySelectorAll("#stage .puls").forEach(el => el.classList.remove("puls"));
+    try { localStorage.setItem(EINFUEHRUNG_KEY, "ja"); } catch (e) { /* dann eben beim nächsten Mal wieder */ }
+  }
+
+  // Gibt false zurück, wenn diese Aktion im aktuellen Schritt noch nicht dran ist
+  function einfuehrungErlaubt(aktion) {
+    if (!einfuehrung) return true;
+    const erlaubt = {
+      mappe: ["akte"],
+      akteLesen: ["schliessen"],
+      gg: ["gg"],
+      ggLesen: ["schliessen"],
+      stempel: ["akte", "gg", "schliessen", "stempel"]
+    }[einfuehrung];
+    if (erlaubt.includes(aktion)) return true;
+    tipp.classList.remove("wackeln");
+    void tipp.offsetWidth;
+    tipp.classList.add("wackeln");
+    Sound.spiele("klick");
+    return false;
+  }
+
+  document.getElementById("tippSkip").addEventListener("click", () => {
+    const warStempel = einfuehrung === "stempel";
+    beendeEinfuehrung();
+    if (!warStempel) aktenStart = performance.now();
+  });
   video.addEventListener("ended", zeigeSchreibtisch);
   video.addEventListener("error", zeigeSchreibtisch);
   document.getElementById("skip").addEventListener("click", zeigeSchreibtisch);
@@ -654,8 +767,8 @@
     buchLinks.scrollTop = buchRechts.scrollTop = 0;
     offenesBuch = art;
     stage.classList.add("buch-offen");
-    // Beim ersten Mal zeigen die Stempel, wo entschieden wird
-    if (!ersteAkteGesehen && nr === 0) {
+    // Beim ersten Mal zeigen die Stempel, wo entschieden wird (außer die Einführung führt gerade)
+    if (!ersteAkteGesehen && nr === 0 && !einfuehrung) {
       ersteAkteGesehen = true;
       document.getElementById("hs-green").classList.add("puls");
       document.getElementById("hs-red").classList.add("puls");
@@ -664,14 +777,18 @@
 
   function schliesseBuch() {
     if (!offenesBuch) return;
+    if (!einfuehrungErlaubt("schliessen")) return;
     offenesBuch = null;
     stage.classList.remove("buch-offen");
     Sound.spiele("klick");
+    if (einfuehrung === "akteLesen") einfuehrungSchritt("gg");
+    else if (einfuehrung === "ggLesen") einfuehrungSchritt("stempel");
   }
 
   function oeffneAkte() {
     if (entschieden) return;
     if (offenesBuch === "akte") return schliesseBuch();
+    if (!einfuehrungErlaubt("akte")) return;
     mappe.classList.remove("puls");
     Sound.spiele("papier");
     const f = fall();
@@ -684,11 +801,13 @@
         <p>${esc(f.worum)}</p>
         <p class="notiz">${esc(f.umstaende)}</p>
         <p class="stempelhinweis">Entscheide mit einem Stempel →</p>`);
+    if (einfuehrung === "mappe") einfuehrungSchritt("akteLesen");
   }
 
   function oeffneGrundgesetz() {
     if (entschieden) return;
     if (offenesBuch === "gg") return schliesseBuch();
+    if (!einfuehrungErlaubt("gg")) return;
     Sound.spiele("buch");
     const f = fall();
     const [erster, ...weitere] = f.hinweise;
@@ -698,6 +817,7 @@
         <p class="zuakte">zur Akte „${esc(f.kurztitel)}“</p>
         <ol><li>${esc(erster)}</li></ol>`, `
         <ol start="2">${weitere.map(h => `<li>${esc(h)}</li>`).join("")}</ol>`);
+    if (einfuehrung === "gg") einfuehrungSchritt("ggLesen");
   }
 
   document.getElementById("buchZu").addEventListener("click", schliesseBuch);
@@ -705,6 +825,8 @@
 
   function entscheiden(wahl) {
     if (entschieden || stage.classList.contains("busy")) return;
+    if (!einfuehrungErlaubt("stempel")) return;
+    beendeEinfuehrung();
     entschieden = true;
     offenesBuch = null;
     stage.classList.remove("buch-offen");
