@@ -678,13 +678,15 @@
   // Führt Schritt für Schritt durch: Akte lesen, Grundgesetz prüfen, stempeln.
   // Andere Gegenstände reagieren erst, wenn der aktuelle Schritt erledigt ist.
 
-  const EINFUEHRUNG_KEY = "be-a-president-einfuehrung";
+  // Bei jedem Aufruf des Spiels und für jeden neuen Spieler ist die Einführung an,
+  // für die zweite Amtszeit desselben Spielers nicht mehr
+  let einfuehrungErledigt = false;
   let einfuehrungGewuenscht = false;
   let einfuehrung = null;   // null | "mappe" | "akteLesen" | "gg" | "ggLesen" | "stempel"
   const tipp = document.getElementById("tipp");
 
   function einfuehrungGesehen() {
-    try { return localStorage.getItem(EINFUEHRUNG_KEY) === "ja"; } catch (e) { return false; }
+    return einfuehrungErledigt;
   }
 
   const SCHRITTE = {
@@ -721,7 +723,7 @@
     stage.classList.remove("einfuehrung");
     tipp.className = "tipp";
     document.querySelectorAll("#stage .puls").forEach(el => el.classList.remove("puls"));
-    try { localStorage.setItem(EINFUEHRUNG_KEY, "ja"); } catch (e) { /* dann eben beim nächsten Mal wieder */ }
+    einfuehrungErledigt = true;
   }
 
   // Gibt false zurück, wenn diese Aktion im aktuellen Schritt noch nicht dran ist
@@ -1113,6 +1115,7 @@
     nochmal: neueAmtszeit,
     anderer: () => {
       spielerName = "";
+      einfuehrungErledigt = false;
       stage.classList.remove("verloren");
       overlay.classList.remove("rot");
       aktualisiereHud();
